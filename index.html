@@ -293,6 +293,28 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
   font-size: 11px; color: #9ca3af; font-family: 'DM Mono', monospace;
   line-height: 1.8; border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 8px;
 }
+
+.consent-line {
+  font-size: 11px; color: #9ca3af; line-height: 1.6;
+  margin-top: 16px; max-width: 620px;
+}
+
+.disclaimer {
+  border: 1px solid #e5e7eb; border-radius: 12px;
+  background: #fafbfc; padding: 24px 28px; margin-top: 24px;
+}
+.disclaimer-title {
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: #6b7280; font-weight: 600; margin-bottom: 14px;
+}
+.disclaimer p {
+  font-size: 11px; color: #9ca3af; line-height: 1.7; margin-bottom: 12px;
+}
+.disclaimer p strong { color: #6b7280; font-weight: 600; }
+.disclaimer-footer {
+  font-family: 'DM Mono', monospace; font-size: 10px; color: #c4cad6;
+  border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 6px;
+}
 .pdf-bar {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 16px;
@@ -384,6 +406,9 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
 
   /* Note */
   .note { font-size: 7pt !important; margin-top: 12px !important; color: #9ca3af !important; }
+  .disclaimer { font-size: 7pt !important; margin-top: 12px !important; padding: 12px 14px !important; page-break-inside: avoid; }
+  .disclaimer p { font-size: 7pt !important; margin-bottom: 6px !important; }
+  .disclaimer-title { font-size: 7pt !important; }
 
   /* Slider — hide, show value inline */
   input[type="range"] { display: none !important; }
@@ -527,6 +552,17 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
       <div class="hint">Best practice: under 40 days</div>
     </div>
 
+    <div class="card">
+      <div class="card-label">Cost to Collect (CTC)</div>
+      <div class="card-title">% of collections spent on billing operations</div>
+      <div class="slider-row">
+        <input type="range" id="ctc" class="slider-blue" min="2" max="15" value="7" step="0.5"
+          oninput="setSV('ctc_val', this.value, '%')">
+        <span class="sv-blue" id="ctc_val">7%</span>
+      </div>
+      <div class="hint">HFMA best practice: 2–3%</div>
+    </div>
+
   </div>
 
   <div class="btn-row">
@@ -618,6 +654,8 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
+
+  <p class="consent-line">By submitting, you acknowledge that all results are estimates for illustrative purposes only, do not constitute a guarantee of outcomes or financial advice, and that eCloudsHealth may contact you about its products and services. Full disclaimer shown with your results.</p>
 
 </div>
 
@@ -787,9 +825,9 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
         <div class="m-sub">platform + per-claim + staff</div>
       </div>
       <div class="metric hl-blue">
-        <div class="m-label">Annual cost savings alone</div>
+        <div class="m-label">Cost saving (benchmark estimate)</div>
         <div class="mv mv-lg mv-blue" id="r-cost-saving">—</div>
-        <div class="m-sub">before revenue recovery</div>
+        <div class="m-sub">see CTC panel for validated figure</div>
       </div>
     </div>
     <div class="inner-div">
@@ -820,7 +858,7 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
         <div style="flex:1;min-width:200px">
           <div class="sc-label" style="margin-bottom:10px">Combined annual benefit</div>
           <div style="display:flex;flex-direction:column;gap:5px;font-size:12px;font-family:'DM Mono',monospace;color:#4b7a5a">
-            <div style="display:flex;justify-content:space-between;gap:24px"><span>Cost savings</span><span id="r-combined-cost" style="color:#15803d;font-weight:600">—</span></div>
+            <div style="display:flex;justify-content:space-between;gap:24px"><span>Cost saving (CTC reduction)</span><span id="r-combined-cost" style="color:#15803d;font-weight:600">—</span></div>
             <div style="display:flex;justify-content:space-between;gap:24px"><span>Revenue recovery</span><span id="r-combined-rec" style="color:#15803d;font-weight:600">—</span></div>
             <div style="display:flex;justify-content:space-between;gap:24px"><span>CCR / NCR / A/R gains</span><span id="r-combined-kpi" style="color:#15803d;font-weight:600">—</span></div>
           </div>
@@ -829,6 +867,51 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
           <div style="font-size:11px;font-family:'DM Mono',monospace;color:#4b7a5a;margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em">Total</div>
           <span class="sc-value" id="r-combined">—</span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COST TO COLLECT PANEL -->
+  <div class="section-label lbl-amber">// Cost to Collect (CTC) — HFMA benchmark comparison</div>
+  <div class="panel" style="background:#1a1a2e;border:1px solid #2d2d52;margin-bottom:16px">
+    <div class="metrics-row">
+      <div class="metric hl-red">
+        <div class="m-label">Your current Cost to Collect</div>
+        <div class="mv mv-lg mv-red" id="r-ctc-now">—</div>
+        <div class="m-sub" id="r-ctc-now-dollar">—</div>
+      </div>
+      <div class="metric hl-green">
+        <div class="m-label">Projected CTC with eCloudsHealth</div>
+        <div class="mv mv-lg mv-green" id="r-ctc-new">—</div>
+        <div class="m-sub" id="r-ctc-new-dollar">—</div>
+      </div>
+      <div class="metric hl-blue">
+        <div class="m-label">Annual CTC saving</div>
+        <div class="mv mv-lg mv-blue" id="r-ctc-saving">—</div>
+        <div class="m-sub">reduced billing operation cost</div>
+      </div>
+    </div>
+    <div class="inner-div">
+      <div class="section-label lbl-amber" style="margin-bottom:14px">// Your journey to HFMA best practice</div>
+      <div class="bar-rows">
+        <div class="brow">
+          <span class="brow-label" style="color:#f87171">Today</span>
+          <div class="brow-track" style="width:240px"><div class="brow-fill" id="ctc-bar-now" style="background:#e03131;width:0%"></div></div>
+          <span class="brow-val" style="color:#f87171" id="ctc-bv-now">—</span>
+        </div>
+        <div class="brow">
+          <span class="brow-label" style="color:#4ade80">With eCloudsHealth</span>
+          <div class="brow-track" style="width:240px"><div class="brow-fill" id="ctc-bar-new" style="background:#22c55e;width:0%"></div></div>
+          <span class="brow-val" style="color:#4ade80" id="ctc-bv-new">—</span>
+        </div>
+        <div class="brow">
+          <span class="brow-label" style="color:#93c5fd">HFMA best practice</span>
+          <div class="brow-track" style="width:240px"><div class="brow-fill" style="background:#3b82f6;width:13%"></div></div>
+          <span class="brow-val" style="color:#93c5fd">2%</span>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#9999bb;font-family:'DM Mono',monospace;margin-top:18px;padding:10px 14px;background:#13132a;border:1px solid #2d2d52;border-radius:6px;line-height:1.6">
+        ⚠ CTC calculated on core billing operation costs — billing staff, platform, and per-claim fees — and is applied consistently across both columns. Per HFMA's full definition, costs such as fringe benefits, collection agency fees, and IT infrastructure are excluded here and would increase CTC on both sides equally. The <strong style="color:#c4c4e0">delta between the two</strong> remains valid.
       </div>
     </div>
   </div>
@@ -847,9 +930,14 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
     </button>
   </div>
 
-  <div class="note">
-    * Leakage estimates based on MGMA, HFMA, and CMS industry benchmarks. Current system per-claim cost assumes industry average of ~$5/claim (clearinghouse + manual processing overhead). Staff reduction assumes 60% of manual billing hours are automated. Actual results vary by specialty, payer mix, and workflow maturity. This tool does not constitute a financial guarantee.<br>
-    eCloudsHealth · Built on Salesforce Health Cloud · eclouds.com
+  <div class="disclaimer">
+    <div class="disclaimer-title">Important disclaimer</div>
+    <p>This Revenue Leakage Calculator (the "Tool") is provided by eCloudsHealth for informational and illustrative purposes only. All figures, projections, savings, recovery amounts, cost-to-collect comparisons, and benefits shown are <strong>estimates</strong> generated from the inputs you provide combined with general healthcare industry benchmarks (including those published by MGMA, HFMA, and CMS).</p>
+    <p>These estimates <strong>do not constitute a guarantee, warranty, promise, or representation</strong> of actual results, savings, or financial outcomes. Actual results will vary — potentially materially — based on your organization's specialty, payer mix, contract terms, patient population, current systems, workflow maturity, staffing, regulatory environment, and numerous other factors outside eCloudsHealth's control.</p>
+    <p>Cost-to-Collect, Clean Claim Rate, Net Collection Rate, and Days in A/R comparisons are calculated on a limited set of core billing-operation costs applied consistently across both current-state and projected scenarios. They exclude certain costs (such as fringe benefits, collection agency fees, and IT infrastructure) that, per HFMA's full definitions, would affect both scenarios. Industry benchmark assumptions (e.g., ~$5 per claim processing cost) are generalizations and may not reflect your actual costs.</p>
+    <p>This Tool does not constitute financial, accounting, legal, tax, or professional advice, and should not be relied upon as the sole basis for any business decision. You should consult your own qualified advisors and conduct independent due diligence before making any purchasing or financial decision. eCloudsHealth disclaims all liability for any action taken or not taken in reliance on the outputs of this Tool to the fullest extent permitted by law.</p>
+    <p>By using this Tool and submitting your information, you acknowledge and agree to the above. Information you submit may be used by eCloudsHealth to contact you regarding its products and services in accordance with its Privacy Policy.</p>
+    <div class="disclaimer-footer">© <span id="year"></span> eCloudsHealth · Built on Salesforce Health Cloud · eclouds.com</div>
   </div>
 
 </div><!-- /step3 -->
@@ -925,11 +1013,12 @@ function compute() {
   const staffHrs    = parseFloat(document.getElementById('staff_hrs').value)     || 0;
   const staffCost   = parseFloat(document.getElementById('staff_cost').value)    || 0;
   const recRate     = parseFloat(document.getElementById('recovery_rate').value) / 100;
-  const ebridgeFee  = 15000;
+  const ebridgeFee  = 18000;
   const perClaimFee = 2.0;
   const ccr         = parseFloat(document.getElementById('ccr').value)      / 100;
   const ncr         = parseFloat(document.getElementById('ncr').value)      / 100;
   const daysAR      = parseFloat(document.getElementById('days_ar').value)  || 0;
+  const ctcCurrent  = parseFloat(document.getElementById('ctc').value)      / 100;
 
   const annualClaims  = claims * 12;
   const annualRevenue = annualClaims * avgClaim;
@@ -976,7 +1065,16 @@ function compute() {
   const ourTotal    = ourPlat + ourPC + ourStaff;
 
   const costSaving  = theirTotal - ourTotal;
-  const combined    = costSaving + totalRec + ccrLoss + ncrLoss + arCost;
+
+  // Cost to Collect (CTC) — this is now the source of truth for cost savings
+  const cashCollected    = annualRevenue * ncr;                         // their actual cash collected
+  const ctcCurrentDollar = ctcCurrent * cashCollected;                  // their CTC in dollars (their own %)
+  const ourCTCDollar     = ourTotal;                                    // platform + per-claim + 40% staff
+  const ctcProjected     = cashCollected > 0 ? ourCTCDollar / cashCollected : 0;
+  const ctcSaving        = Math.max(0, ctcCurrentDollar - ourCTCDollar);
+
+  // Combined benefit — CTC saving replaces the old estimated cost saving
+  const combined    = ctcSaving + totalRec + ccrLoss + ncrLoss + arCost;
 
   return {
     annualClaims, annualRevenue, staffAnnual,
@@ -986,7 +1084,8 @@ function compute() {
     ourPlat, ourPC, ourStaff, ourTotal,
     costSaving, combined,
     ccr, ncr, daysAR, ccrLoss, ncrLoss, arCost,
-    ccrGap, ncrGap, arExcessDays
+    ccrGap, ncrGap, arExcessDays,
+    ctcCurrent, ctcCurrentDollar, ctcProjected, ourCTCDollar, ctcSaving, cashCollected
   };
 }
 
@@ -1025,7 +1124,7 @@ function renderResults(d) {
   set('r-t-total', fmt(d.theirTotal));
   set('r-u-total', fmt(d.ourTotal));
   set('r-combined', fmt(d.combined));
-  set('r-combined-cost', fmt(d.costSaving));
+  set('r-combined-cost', fmt(d.ctcSaving));
   set('r-combined-rec',  fmt(d.totalRec));
   set('r-combined-kpi',  fmt(d.ccrLoss + d.ncrLoss + d.arCost));
   set('r-ccr-loss', fmt(d.ccrLoss));
@@ -1040,6 +1139,19 @@ function renderResults(d) {
   set('bv-ccr', Math.round(d.ccr * 100) + '% vs 95%');
   set('bv-ncr', Math.round(d.ncr * 100) + '% vs 96%');
   set('bv-ar',  Math.round(d.daysAR) + ' vs 40 days');
+
+  // Cost to Collect
+  set('r-ctc-now', (d.ctcCurrent * 100).toFixed(1) + '%');
+  set('r-ctc-now-dollar', fmt(d.ctcCurrentDollar) + ' / yr');
+  set('r-ctc-new', (d.ctcProjected * 100).toFixed(1) + '%');
+  set('r-ctc-new-dollar', fmt(d.ourCTCDollar) + ' / yr');
+  set('r-ctc-saving', fmt(d.ctcSaving));
+  // CTC journey bars — scale relative to current (worst) CTC, min 15 width for visibility
+  const ctcMax = Math.max(d.ctcCurrent, 0.02, 0.0001);
+  setW('ctc-bar-now', 100);
+  setW('ctc-bar-new', Math.max(10, (d.ctcProjected / ctcMax) * 100));
+  set('ctc-bv-now', (d.ctcCurrent * 100).toFixed(1) + '%');
+  set('ctc-bv-new', (d.ctcProjected * 100).toFixed(1) + '%');
 }
 
 /* ── Recovery slider refreshes relevant numbers only ── */
@@ -1053,7 +1165,7 @@ function refreshRecovery() {
   set('cv2', fmt(d.totalRec));
   set('cv3', fmt(d.residual));
   set('r-combined', fmt(d.combined));
-  set('r-combined-cost', fmt(d.costSaving));
+  set('r-combined-cost', fmt(d.ctcSaving));
   set('r-combined-rec',  fmt(d.totalRec));
   set('r-combined-kpi',  fmt(d.ccrLoss + d.ncrLoss + d.arCost));
 }
@@ -1107,7 +1219,10 @@ function goStep3() {
     daysAR:        Math.round(d.daysAR),
     ccrLoss:       Math.round(d.ccrLoss),
     ncrLoss:       Math.round(d.ncrLoss),
-    arCost:        Math.round(d.arCost)
+    arCost:        Math.round(d.arCost),
+    ctcCurrent:    (d.ctcCurrent * 100).toFixed(1) + '%',
+    ctcProjected:  (d.ctcProjected * 100).toFixed(1) + '%',
+    ctcSaving:     Math.round(d.ctcSaving)
   };
 
   fetch('https://script.google.com/macros/s/AKfycbzzHJGgGN3xqJmlf48WOFSDbn-Uns7ZNTmH_USBWFQjnzlUfHM3L1KaXDim2zAEj00sPA/exec', {
@@ -1130,6 +1245,9 @@ function downloadPDF() {
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg> Download PDF report`;
   }, 150);
 }
+
+/* ── Set copyright year ── */
+document.getElementById('year').textContent = new Date().getFullYear();
 </script>
 </body>
 </html>
