@@ -299,10 +299,12 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
 .hero-primary .hero-value .accent { color: #5b9bf0; }
 .hero-primary .hero-sublabel { font-size: 12px; color: #8aa6cc; margin-top: 10px; }
 .hero-primary .hero-sublabel span { color: #c4d4e8; font-weight: 600; }
-.hero-secondary { display: flex; gap: 36px; flex-wrap: wrap; }
+.hero-secondary { display: flex; gap: 28px; flex-wrap: wrap; }
 .hero-stat { }
 .hero-stat .hs-label { font-size: 11px; color: #8aa6cc; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
 .hero-stat .hs-value { font-family: 'DM Sans', sans-serif; font-size: 24px; font-weight: 700; color: #fff; }
+.hero-stat .hs-roi { font-size: 11px; color: #8aa6cc; margin-top: 4px; }
+.hero-stat .hs-roi span { color: #5b9bf0; font-weight: 700; }
 .hero-breakdown {
   display: flex; gap: 28px; flex-wrap: wrap;
   border-top: 1px solid #1f3048; margin-top: 24px; padding-top: 20px;
@@ -663,7 +665,7 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
           oninput="setSV('days_ar_val', this.value, ' days')">
         <span class="sv-blue" id="days_ar_val">55 days</span>
       </div>
-      <div class="hint">Best practice: under 40 days</div>
+      <div class="hint">Best practice: under 30 days</div>
     </div>
 
     <div class="card">
@@ -904,6 +906,12 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
         <div class="hero-stat">
           <div class="hs-label">Year 1 net benefit</div>
           <div class="hs-value" id="h-year1">—</div>
+          <div class="hs-roi">Year 1 ROI <span id="h-roi-y1">—</span></div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-label">Recurring net benefit</div>
+          <div class="hs-value" id="h-recurring">—</div>
+          <div class="hs-roi">Annual ROI <span id="h-roi-rec">—</span></div>
         </div>
         <div class="hero-stat">
           <div class="hs-label">One-time setup</div>
@@ -926,8 +934,8 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
       <div class="ht-row">
         <div class="ht-item"><span class="ht-label">Clean Claim Rate</span><span class="ht-val"><span id="ht-ccr-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">95%</span></span></div>
         <div class="ht-item"><span class="ht-label">Net Collection Rate</span><span class="ht-val"><span id="ht-ncr-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">96%</span></span></div>
-        <div class="ht-item"><span class="ht-label">Days in A/R</span><span class="ht-val"><span id="ht-ar-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">40 days</span></span></div>
-        <div class="ht-item"><span class="ht-label">Cost to Collect</span><span class="ht-val"><span id="ht-ctc-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">2–3%</span></span></div>
+        <div class="ht-item"><span class="ht-label">Days in A/R</span><span class="ht-val"><span id="ht-ar-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">30 days</span></span></div>
+        <div class="ht-item"><span class="ht-label">Cost to Collect</span><span class="ht-val"><span id="ht-ctc-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target" id="ht-ctc-target">—</span></span></div>
       </div>
     </div>
   </div>
@@ -1002,7 +1010,7 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
             <span class="brow-val" id="bv-ncr">—</span>
           </div>
           <div class="brow">
-            <span class="brow-label">Avg Days in A/R <span id="r-ar-pct" style="color:#111827;font-weight:600"></span> · target 40 days</span>
+            <span class="brow-label">Avg Days in A/R <span id="r-ar-pct" style="color:#111827;font-weight:600"></span> · target 30 days</span>
             <div class="brow-track" style="width:200px"><div class="brow-fill accent" id="b-ar-you" style="width:0%"></div></div>
             <span class="brow-val" id="bv-ar">—</span>
           </div>
@@ -1381,7 +1389,7 @@ function compute() {
   // ── KPI calculations (corrected treatment) ──
   const ccrBenchmark = 0.95;
   const ncrBenchmark = 0.96;
-  const arBenchmark  = 40;
+  const arBenchmark  = 30;
 
   // NCR gap → genuine recurring REVENUE recovered (collectible revenue not collected)
   const ncrGap   = Math.max(0, ncrBenchmark - ncr);
@@ -1425,6 +1433,16 @@ function compute() {
   const year1Net      = combinedNetSF - setupCost;
   const paybackMonths = combinedNetSF > 0 ? (setupCost / combinedNetSF) * 12 : 0;
 
+  // ── ROI ──
+  // Recurring net benefit = same as combinedNetSF (recurring, SF licensing already deducted)
+  const recurringNet  = combinedNetSF;
+  // Year 1 investment = setup + eCloudsHealth annual cost + SF licensing
+  const year1Invest   = setupCost + ourTotal + sfLicenseAnnual;
+  // Recurring investment = eCloudsHealth annual cost + SF licensing (no setup)
+  const recurringInvest = ourTotal + sfLicenseAnnual;
+  const roiYear1      = year1Invest > 0 ? (year1Net / year1Invest) * 100 : 0;
+  const roiRecurring  = recurringInvest > 0 ? (recurringNet / recurringInvest) * 100 : 0;
+
   return {
     billingModel, providers, sfUsers, sfLicenseAnnual,
     outsourceFeePct, reconHrs, reconCost, theirOutsourceFee,
@@ -1436,8 +1454,9 @@ function compute() {
     ccr, ncr, daysAR, ncrGap, ncrGain, ccrGap, ccrReworkAvoided,
     arExcessDays, workingCapitalReleased,
     ctcCurrent, ctcCurrentDollar, ctcProjected, ourCTCDollar, ctcSaving,
-    combined, combinedNetSF,
-    setupCost, year1Net, paybackMonths
+    combined, combinedNetSF, recurringNet,
+    setupCost, year1Net, paybackMonths,
+    roiYear1, roiRecurring, year1Invest, recurringInvest
   };
 }
 
@@ -1448,6 +1467,9 @@ function renderResults(d) {
   set('h-combined', fmt(d.combined));
   set('h-sflic',    fmt(d.sfLicenseAnnual));
   set('h-year1',    fmt(d.year1Net));
+  set('h-recurring', fmt(d.recurringNet));
+  set('h-roi-y1',   Math.round(d.roiYear1) + '%');
+  set('h-roi-rec',  Math.round(d.roiRecurring) + '%');
   set('h-payback',  d.paybackMonths > 0 ? d.paybackMonths.toFixed(1) + ' mo' : '—');
   set('h-setup',    fmt(d.setupCost));
   set('h-bd-cost',  fmt(d.ctcSaving));
@@ -1458,6 +1480,7 @@ function renderResults(d) {
   set('ht-ncr-now', Math.round(d.ncr * 100) + '%');
   set('ht-ar-now',  Math.round(d.daysAR) + ' days');
   set('ht-ctc-now', (d.ctcCurrent * 100).toFixed(1) + '%');
+  set('ht-ctc-target', (d.ctcProjected * 100).toFixed(1) + '%');
 
   // Leakage
   set('r-total-leak', fmt(d.totalLeak));
@@ -1523,10 +1546,10 @@ function renderResults(d) {
   set('r-ar-pct',   Math.round(d.daysAR) + ' days');
   setW('b-ccr-you', Math.min(100, (d.ccr / 0.95) * 100));
   setW('b-ncr-you', Math.min(100, (d.ncr / 0.96) * 100));
-  setW('b-ar-you',  Math.min(100, (40 / Math.max(d.daysAR, 1)) * 100));
+  setW('b-ar-you',  Math.min(100, (30 / Math.max(d.daysAR, 1)) * 100));
   set('bv-ccr', Math.round(d.ccr * 100) + '% vs 95%');
   set('bv-ncr', Math.round(d.ncr * 100) + '% vs 96%');
-  set('bv-ar',  Math.round(d.daysAR) + ' vs 40 days');
+  set('bv-ar',  Math.round(d.daysAR) + ' vs 30 days');
 
   // Cost to Collect
   set('r-ctc-now', (d.ctcCurrent * 100).toFixed(1) + '%');
@@ -1560,6 +1583,9 @@ function refreshRecovery() {
   set('h-combined', fmt(d.combined));
   set('h-sflic',    fmt(d.sfLicenseAnnual));
   set('h-year1',    fmt(d.year1Net));
+  set('h-recurring', fmt(d.recurringNet));
+  set('h-roi-y1',   Math.round(d.roiYear1) + '%');
+  set('h-roi-rec',  Math.round(d.roiRecurring) + '%');
   set('h-payback',  d.paybackMonths > 0 ? d.paybackMonths.toFixed(1) + ' mo' : '—');
   set('h-bd-cost',  fmt(d.ctcSaving));
   set('h-bd-ncr',   fmt(d.ncrGain));
@@ -1642,7 +1668,9 @@ function goStep3() {
     combinedNetSF: Math.round(d.combinedNetSF),
     setupCost:     Math.round(d.setupCost),
     year1Net:      Math.round(d.year1Net),
-    paybackMonths: d.paybackMonths.toFixed(1)
+    paybackMonths: d.paybackMonths.toFixed(1),
+    roiYear1:      Math.round(d.roiYear1) + '%',
+    roiRecurring:  Math.round(d.roiRecurring) + '%'
   };
 
   fetch('https://script.google.com/macros/s/AKfycbz__RGjcPnFwEfhk-2i1yhKFkDnxHLLa_RTTNIVBJRSFplm9D71KvDGVwuVaSRR1HzMIQ/exec', {
