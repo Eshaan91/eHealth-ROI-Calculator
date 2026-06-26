@@ -297,6 +297,8 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
 .hero-primary .hero-label { font-size: 13px; color: #b8c4d6; margin-bottom: 8px; }
 .hero-primary .hero-value { font-family: 'DM Sans', sans-serif; font-size: 52px; font-weight: 700; line-height: 1; color: #fff; }
 .hero-primary .hero-value .accent { color: #5b9bf0; }
+.hero-primary .hero-sublabel { font-size: 12px; color: #8aa6cc; margin-top: 10px; }
+.hero-primary .hero-sublabel span { color: #c4d4e8; font-weight: 600; }
 .hero-secondary { display: flex; gap: 36px; flex-wrap: wrap; }
 .hero-stat { }
 .hero-stat .hs-label { font-size: 11px; color: #8aa6cc; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
@@ -308,12 +310,38 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
 .hb-item { display: flex; flex-direction: column; gap: 4px; }
 .hb-item .hb-label { font-size: 11px; color: #8aa6cc; }
 .hb-item .hb-value { font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; color: #e5edf7; }
+.hb-context { opacity: 0.6; }
+.hb-tag { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: #5b9bf0; border: 1px solid #2a456b; border-radius: 3px; padding: 1px 5px; margin-left: 6px; vertical-align: middle; }
+
+/* ── Hero KPI targets strip ── */
+.hero-targets { border-top: 1px solid #1f3048; margin-top: 20px; padding-top: 18px; }
+.ht-title { font-size: 11px; color: #8aa6cc; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; font-weight: 600; }
+.ht-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media(max-width: 600px) { .ht-row { grid-template-columns: 1fr 1fr; gap: 16px; } }
+.ht-item { display: flex; flex-direction: column; gap: 5px; }
+.ht-label { font-size: 11px; color: #8aa6cc; }
+.ht-val { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; color: #e5edf7; }
+.ht-arrow { color: #5b9bf0; margin: 0 2px; }
+.ht-target { color: #5b9bf0; }
 
 /* ── Section heading above each card ── */
 .report-section-label {
   font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: .06em;
   text-transform: uppercase; color: #9ca3af; margin-bottom: 10px; font-weight: 600;
 }
+
+/* ── Billing model toggle ── */
+.billing-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+@media(max-width: 600px) { .billing-toggle { grid-template-columns: 1fr; } }
+.billing-opt {
+  display: flex; flex-direction: column; gap: 4px; text-align: left;
+  background: #fff; border: 1.5px solid var(--card-bd); border-radius: 12px;
+  padding: 18px 20px; cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif;
+}
+.billing-opt:hover { border-color: #b4c4dd; }
+.billing-opt.selected { border-color: var(--blue); background: #f5f9ff; }
+.bt-name { font-size: 15px; font-weight: 600; color: #1a2333; }
+.bt-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
 
 /* ── Complexity selector ── */
 .complexity-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -539,7 +567,7 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
     </div>
   </div>
 
-  <div class="report-section-label" style="margin-top:8px">Step 1 · Practice volume &amp; billing</div>
+  <div class="report-section-label" style="margin-top:8px">Step 1 · Practice volume</div>
   <div class="grid">
 
     <div class="card">
@@ -557,6 +585,24 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
       <div class="input-wrap">
         <span class="prefix">$</span>
         <input type="number" id="avg_claim" value="280" min="1">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Number of providers</div>
+      <div class="card-title">Physicians / billing providers</div>
+      <div class="input-wrap">
+        <input type="number" id="providers" value="15" min="1" class="no-prefix">
+        <span class="suffix">providers</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Expected Salesforce users</div>
+      <div class="card-title">Staff needing a Health Cloud license</div>
+      <div class="input-wrap">
+        <input type="number" id="sf_users" value="20" min="1" class="no-prefix">
+        <span class="suffix">users</span>
       </div>
     </div>
 
@@ -580,24 +626,6 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
         <span class="sv-blue" id="rework_val">30%</span>
       </div>
       <div class="hint">Industry avg: 25–40%</div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Manual billing hours</div>
-      <div class="card-title">Staff hours/week on manual billing</div>
-      <div class="input-wrap">
-        <input type="number" id="staff_hrs" value="20" min="0" class="no-prefix">
-        <span class="suffix">hrs/wk</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Fully loaded staff cost</div>
-      <div class="card-title">Hourly cost of billing staff</div>
-      <div class="input-wrap">
-        <span class="prefix">$</span>
-        <input type="number" id="staff_cost" value="35" min="1">
-      </div>
     </div>
 
   </div>
@@ -651,7 +679,72 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
 
   </div>
 
-  <div class="report-section-label" style="margin-top:8px">Step 3 · Implementation scope</div>
+  <div class="report-section-label" style="margin-top:8px">Step 3 · Your billing operation</div>
+  <div class="billing-toggle">
+    <button type="button" class="billing-opt selected" data-model="inhouse" onclick="selectBilling(this)">
+      <span class="bt-name">In-house billing</span>
+      <span class="bt-desc">Your own staff handle billing &amp; collections</span>
+    </button>
+    <button type="button" class="billing-opt" data-model="outsourced" onclick="selectBilling(this)">
+      <span class="bt-name">Outsourced billing</span>
+      <span class="bt-desc">A third-party biller charges a % of collections</span>
+    </button>
+  </div>
+
+  <!-- In-house fields -->
+  <div class="grid" id="inhouse-fields">
+    <div class="card">
+      <div class="card-label">Manual billing hours</div>
+      <div class="card-title">Staff hours/week on manual billing</div>
+      <div class="input-wrap">
+        <input type="number" id="staff_hrs" value="20" min="0" class="no-prefix">
+        <span class="suffix">hrs/wk</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Fully loaded staff cost</div>
+      <div class="card-title">Hourly cost of billing staff</div>
+      <div class="input-wrap">
+        <span class="prefix">$</span>
+        <input type="number" id="staff_cost" value="35" min="1">
+      </div>
+    </div>
+  </div>
+
+  <!-- Outsourced fields -->
+  <div id="outsourced-fields" style="display:none">
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">Outsourced billing fee</div>
+        <div class="card-title">% of collections paid to your biller</div>
+        <div class="slider-row">
+          <input type="range" id="outsource_fee" class="slider-blue" min="4" max="10" value="5.5" step="0.5"
+            oninput="setSV('outsource_fee_val', this.value, '%')">
+          <span class="sv-blue" id="outsource_fee_val">5.5%</span>
+        </div>
+        <div class="hint">Industry typical: 4–10% of collections</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Internal reconciliation hours</div>
+        <div class="card-title">Staff hours/week reconciling the biller</div>
+        <div class="input-wrap">
+          <input type="number" id="recon_hrs" value="10" min="0" class="no-prefix">
+          <span class="suffix">hrs/wk</span>
+        </div>
+        <div class="hint">Often under-tracked — payments, denials, posting checks</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Fully loaded staff cost</div>
+        <div class="card-title">Hourly cost of internal staff</div>
+        <div class="input-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="recon_cost" value="35" min="1">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-section-label" style="margin-top:8px">Step 4 · Implementation scope</div>
   <div class="complexity-selector">
     <button type="button" class="complexity-opt" data-cost="40000" onclick="selectComplexity(this)">
       <span class="cx-name">Standard</span>
@@ -803,8 +896,9 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
     <div class="hero-eyebrow">Estimated annual impact with eCloudsHealth</div>
     <div class="hero-main">
       <div class="hero-primary">
-        <div class="hero-label">Combined annual benefit (recurring)</div>
-        <div class="hero-value accent" id="h-combined">—</div>
+        <div class="hero-label">Net annual benefit (after Salesforce licensing)</div>
+        <div class="hero-value accent" id="h-netsf">—</div>
+        <div class="hero-sublabel">Gross combined benefit <span id="h-combined">—</span> · less SF licensing <span id="h-sflic">—</span></div>
       </div>
       <div class="hero-secondary">
         <div class="hero-stat">
@@ -812,19 +906,29 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
           <div class="hs-value" id="h-year1">—</div>
         </div>
         <div class="hero-stat">
-          <div class="hs-label">Setup payback</div>
-          <div class="hs-value" id="h-payback">—</div>
-        </div>
-        <div class="hero-stat">
           <div class="hs-label">One-time setup</div>
           <div class="hs-value" id="h-setup">—</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-label">Setup payback</div>
+          <div class="hs-value" id="h-payback">—</div>
         </div>
       </div>
     </div>
     <div class="hero-breakdown">
       <div class="hb-item"><span class="hb-label">Cost saving (CTC reduction)</span><span class="hb-value" id="h-bd-cost">—</span></div>
-      <div class="hb-item"><span class="hb-label">Revenue recovery</span><span class="hb-value" id="h-bd-rec">—</span></div>
-      <div class="hb-item"><span class="hb-label">CCR / NCR / A/R gains</span><span class="hb-value" id="h-bd-kpi">—</span></div>
+      <div class="hb-item"><span class="hb-label">NCR revenue recovered</span><span class="hb-value" id="h-bd-ncr">—</span></div>
+      <div class="hb-item hb-context"><span class="hb-label">CCR rework cost avoided <span class="hb-tag">incl. in CTC</span></span><span class="hb-value" id="h-bd-ccr">—</span></div>
+      <div class="hb-item hb-context"><span class="hb-label">Working capital released <span class="hb-tag">one-time</span></span><span class="hb-value" id="h-bd-wc">—</span></div>
+    </div>
+    <div class="hero-targets">
+      <div class="ht-title">KPI targets we'll drive toward</div>
+      <div class="ht-row">
+        <div class="ht-item"><span class="ht-label">Clean Claim Rate</span><span class="ht-val"><span id="ht-ccr-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">95%</span></span></div>
+        <div class="ht-item"><span class="ht-label">Net Collection Rate</span><span class="ht-val"><span id="ht-ncr-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">96%</span></span></div>
+        <div class="ht-item"><span class="ht-label">Days in A/R</span><span class="ht-val"><span id="ht-ar-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">40 days</span></span></div>
+        <div class="ht-item"><span class="ht-label">Cost to Collect</span><span class="ht-val"><span id="ht-ctc-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">2–3%</span></span></div>
+      </div>
     </div>
   </div>
 
@@ -869,19 +973,19 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
     <div class="panel-body">
       <div class="metrics-row">
         <div class="metric hl-blue">
-          <div class="m-label">Clean Claim Rate gap cost</div>
-          <div class="mv mv-lg" id="r-ccr-loss">—</div>
-          <div class="m-sub">revenue at risk from resubmissions</div>
-        </div>
-        <div class="metric hl-blue">
-          <div class="m-label">Net Collection Rate gap</div>
+          <div class="m-label">NCR revenue recovered</div>
           <div class="mv mv-lg" id="r-ncr-loss">—</div>
-          <div class="m-sub">uncollected collectible revenue / yr</div>
+          <div class="m-sub">collectible revenue now captured / yr</div>
         </div>
         <div class="metric hl-blue">
-          <div class="m-label">Working capital tied up in A/R</div>
+          <div class="m-label">CCR rework cost avoided</div>
+          <div class="mv mv-lg" id="r-ccr-loss">—</div>
+          <div class="m-sub">staff &amp; processing cost on resubmissions</div>
+        </div>
+        <div class="metric hl-blue">
+          <div class="m-label">Working capital released (one-time)</div>
           <div class="mv mv-lg" id="r-ar-cost">—</div>
-          <div class="m-sub">cash locked in slow collections</div>
+          <div class="m-sub">cash freed by faster A/R · excluded from recurring benefit</div>
         </div>
       </div>
       <div class="inner-div">
@@ -980,14 +1084,14 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
           <thead>
             <tr>
               <th>Cost item</th>
-              <th>Current system <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af">(est.)</span></th>
+              <th id="r-them-head">Current system <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af">(est.)</span></th>
               <th>eCloudsHealth</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="col-label">Platform / software fee (annual)</td><td class="col-them" id="r-t-plat">—</td><td class="col-us" id="r-u-plat">—</td></tr>
-            <tr><td class="col-label">Per-claim processing cost (annual)</td><td class="col-them" id="r-t-pc">—</td><td class="col-us" id="r-u-pc">—</td></tr>
-            <tr><td class="col-label">Billing staff cost (annual)</td><td class="col-them" id="r-t-staff">—</td><td class="col-us" id="r-u-staff">—</td></tr>
+            <tr><td class="col-label" id="r-row1-label">Platform / software fee (annual)</td><td class="col-them" id="r-t-plat">—</td><td class="col-us" id="r-u-plat">—</td></tr>
+            <tr><td class="col-label" id="r-row2-label">Per-claim processing cost (annual)</td><td class="col-them" id="r-t-pc">—</td><td class="col-us" id="r-u-pc">—</td></tr>
+            <tr><td class="col-label" id="r-row3-label">Billing staff cost (annual)</td><td class="col-them" id="r-t-staff">—</td><td class="col-us" id="r-u-staff">—</td></tr>
             <tr class="total-row">
               <td class="col-label" style="font-size:14px;color:#111827">Total annual cost</td>
               <td class="col-them" id="r-t-total" style="font-size:16px">—</td>
@@ -995,13 +1099,15 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
             </tr>
           </tbody>
         </table>
+        <div class="note-box" style="margin-top:14px">
+          <strong>Salesforce Health Cloud licensing</strong> (<span id="r-sf-users">—</span> users × $350/user/mo = <span id="r-sf-annual">—</span>/yr) is paid directly to Salesforce and is required infrastructure for the eCloudsHealth platform. It is shown separately and is deducted in the "net annual benefit" figure at the top of this report.
+        </div>
         <div class="savings-callout">
           <div style="flex:1;min-width:200px">
             <div class="sc-label" style="margin-bottom:10px">Combined annual benefit</div>
             <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#4b5563">
               <div style="display:flex;justify-content:space-between;gap:24px"><span>Cost saving (CTC reduction)</span><span id="r-combined-cost" style="color:#111827;font-weight:600">—</span></div>
-              <div style="display:flex;justify-content:space-between;gap:24px"><span>Revenue recovery</span><span id="r-combined-rec" style="color:#111827;font-weight:600">—</span></div>
-              <div style="display:flex;justify-content:space-between;gap:24px"><span>CCR / NCR / A/R gains</span><span id="r-combined-kpi" style="color:#111827;font-weight:600">—</span></div>
+              <div style="display:flex;justify-content:space-between;gap:24px"><span>NCR revenue recovered</span><span id="r-combined-rec" style="color:#111827;font-weight:600">—</span></div>
             </div>
           </div>
           <div style="text-align:right">
@@ -1210,89 +1316,127 @@ function liveCheckEmail() {
 function compute() {
   const claims      = parseFloat(document.getElementById('claims').value)        || 0;
   const avgClaim    = parseFloat(document.getElementById('avg_claim').value)     || 0;
+  const providers   = parseFloat(document.getElementById('providers').value)     || 0;
+  const sfUsers     = parseFloat(document.getElementById('sf_users').value)      || 0;
   const denialRate  = parseFloat(document.getElementById('denial_rate').value)   / 100;
   const reworkRate  = parseFloat(document.getElementById('rework_rate').value)   / 100;
-  const staffHrs    = parseFloat(document.getElementById('staff_hrs').value)     || 0;
-  const staffCost   = parseFloat(document.getElementById('staff_cost').value)    || 0;
   const recRate     = parseFloat(document.getElementById('recovery_rate').value) / 100;
   const ebridgeFee  = 18000;
   const perClaimFee = 2.0;
+  const sfLicensePerUserMo = 350;
   const ccr         = parseFloat(document.getElementById('ccr').value)      / 100;
   const ncr         = parseFloat(document.getElementById('ncr').value)      / 100;
   const daysAR      = parseFloat(document.getElementById('days_ar').value)  || 0;
   const ctcCurrent  = parseFloat(document.getElementById('ctc').value)      / 100;
 
+  // Billing model
+  const billingModel = document.querySelector('.billing-opt.selected').dataset.model; // 'inhouse' | 'outsourced'
+
   const annualClaims  = claims * 12;
   const annualRevenue = annualClaims * avgClaim;
-  const staffAnnual   = staffHrs * 52 * staffCost;
+  const cashCollected = annualRevenue * ncr;
 
-  // Leakage
+  // ── Their current billing cost (branches by model) ──
+  let theirStaff, theirPlat, theirPC, theirOutsourceFee, theirTotal, staffAnnual;
+  let outsourceFeePct = 0, reconHrs = 0, reconCost = 0;
+
+  if (billingModel === 'inhouse') {
+    const staffHrs  = parseFloat(document.getElementById('staff_hrs').value)  || 0;
+    const staffCost = parseFloat(document.getElementById('staff_cost').value) || 0;
+    staffAnnual = staffHrs * 52 * staffCost;
+    theirStaff  = staffAnnual;
+    theirPlat   = 3000;                  // assumed legacy platform/clearinghouse
+    theirPC     = annualClaims * 5;      // ~$5/claim manual processing
+    theirOutsourceFee = 0;
+    theirTotal  = theirPlat + theirPC + theirStaff;
+  } else {
+    outsourceFeePct = parseFloat(document.getElementById('outsource_fee').value) / 100;
+    reconHrs        = parseFloat(document.getElementById('recon_hrs').value)  || 0;
+    reconCost       = parseFloat(document.getElementById('recon_cost').value) || 0;
+    staffAnnual     = reconHrs * 52 * reconCost;        // internal reconciliation staff cost
+    theirStaff      = staffAnnual;
+    theirOutsourceFee = cashCollected * outsourceFeePct; // % of collections
+    theirPlat       = 0;
+    theirPC         = 0;
+    theirTotal      = theirOutsourceFee + theirStaff;
+  }
+
+  // ── eCloudsHealth cost (same regardless of their model) ──
+  const ourPlat   = ebridgeFee;
+  const ourPC     = annualClaims * perClaimFee;
+  const ourStaff  = staffAnnual * 0.40;                 // 60% of staff effort automated away
+  const ourTotal  = ourPlat + ourPC + ourStaff;
+
+  const costSaving = theirTotal - ourTotal;
+
+  // ── Salesforce Health Cloud licensing (paid to Salesforce, disclosed separately) ──
+  const sfLicenseAnnual = sfUsers * sfLicensePerUserMo * 12;
+
+  // ── Leakage (for the leakage panel) ──
   const denialLoss  = annualRevenue * denialRate * reworkRate;
   const eligLoss    = annualRevenue * 0.03;
   const daysDrag    = annualRevenue * 0.02;
-  const totalLeak   = denialLoss + staffAnnual + eligLoss + daysDrag;
+  const totalLeak   = denialLoss + theirStaff + eligLoss + daysDrag;
 
-  // KPI gap calculations
-  const ccrBenchmark  = 0.95;
-  const ncrBenchmark  = 0.96;
-  const arBenchmark   = 40;
-  // CCR gap: each % below benchmark costs ~avg claim value × monthly claim volume × gap
+  // ── KPI calculations (corrected treatment) ──
+  const ccrBenchmark = 0.95;
+  const ncrBenchmark = 0.96;
+  const arBenchmark  = 40;
+
+  // NCR gap → genuine recurring REVENUE recovered (collectible revenue not collected)
+  const ncrGap   = Math.max(0, ncrBenchmark - ncr);
+  const ncrGain  = annualRevenue * ncrGap;
+
+  // CCR gap → REWORK COST AVOIDED, not lost revenue.
+  // Cost of reworking a denied/rejected claim ~ $25 industry avg (MGMA).
   const ccrGap        = Math.max(0, ccrBenchmark - ccr);
-  const ccrLoss       = annualRevenue * ccrGap * 0.6; // ~60% of rejected claims don't get recovered
-  // NCR gap: uncollected collectible revenue
-  const ncrGap        = Math.max(0, ncrBenchmark - ncr);
-  const ncrLoss       = annualRevenue * ncrGap;
-  // A/R days: working capital cost = excess days × daily revenue × cost of capital (6%)
-  const arExcessDays  = Math.max(0, daysAR - arBenchmark);
-  const dailyRevenue  = annualRevenue / 365;
-  const arCost        = arExcessDays * dailyRevenue * 0.06;
+  const reworkPerClaim = 25;
+  const ccrReworkAvoided = annualClaims * ccrGap * reworkPerClaim;
 
-  // Recovery
+  // A/R days → ONE-TIME working capital released (NOT recurring), excluded from combined.
+  const arExcessDays   = Math.max(0, daysAR - arBenchmark);
+  const dailyRevenue   = annualRevenue / 365;
+  const workingCapitalReleased = arExcessDays * dailyRevenue;   // one-time cash freed
+
+  // ── Recovery (denial rework recovery from automation) ──
   const denialRec   = denialLoss  * recRate;
-  const staffRec    = staffAnnual * 0.60;
+  const staffRec    = theirStaff * 0.60;
   const eligRec     = eligLoss    * recRate;
-  const daysRec     = daysDrag    * recRate;
-  const totalRec    = denialRec + staffRec + eligRec + daysRec;
+  const totalRec    = denialRec + staffRec + eligRec;
   const residual    = Math.max(0, totalLeak - totalRec);
 
-  // Pricing
-  const theirPlat   = 3000;
-  const theirPC     = annualClaims * 5;
-  const theirStaff  = staffAnnual;
-  const theirTotal  = theirPlat + theirPC + theirStaff;
-
-  const ourPlat     = ebridgeFee;
-  const ourPC       = annualClaims * perClaimFee;
-  const ourStaff    = staffAnnual * 0.40;
-  const ourTotal    = ourPlat + ourPC + ourStaff;
-
-  const costSaving  = theirTotal - ourTotal;
-
-  // Cost to Collect (CTC) — this is now the source of truth for cost savings
-  const cashCollected    = annualRevenue * ncr;                         // their actual cash collected
-  const ctcCurrentDollar = ctcCurrent * cashCollected;                  // their CTC in dollars (their own %)
-  const ourCTCDollar     = ourTotal;                                    // platform + per-claim + 40% staff
+  // ── Cost to Collect (CTC) ──
+  const ctcCurrentDollar = ctcCurrent * cashCollected;
+  const ourCTCDollar     = ourTotal;
   const ctcProjected     = cashCollected > 0 ? ourCTCDollar / cashCollected : 0;
   const ctcSaving        = Math.max(0, ctcCurrentDollar - ourCTCDollar);
 
-  // Combined benefit — CTC saving replaces the old estimated cost saving
-  const combined    = ctcSaving + totalRec + ccrLoss + ncrLoss + arCost;
+  // ── Combined annual benefit (RECURRING only) ──
+  // = cost saving (CTC reduction) + NCR revenue gain.
+  // CTC saving already captures all billing-operation cost reductions, INCLUDING the
+  // labor saved on claim rework — so CCR rework-avoided is shown as context only and
+  // is NOT added here (that would double-count it against CTC saving).
+  // A/R working capital is one-time → also excluded from the recurring total.
+  const combined        = ctcSaving + ncrGain;
+  const combinedNetSF   = combined - sfLicenseAnnual;   // net of Salesforce licensing
 
-  // One-time setup cost (from complexity selector) + Year 1 / payback
-  const setupCost   = parseFloat(document.querySelector('.complexity-opt.selected').dataset.cost) || 70000;
-  const year1Net    = combined - setupCost;
-  const paybackMonths = combined > 0 ? (setupCost / combined) * 12 : 0;
+  // ── One-time setup + Year 1 / payback (uses net-of-SF for honesty) ──
+  const setupCost     = parseFloat(document.querySelector('.complexity-opt.selected').dataset.cost) || 70000;
+  const year1Net      = combinedNetSF - setupCost;
+  const paybackMonths = combinedNetSF > 0 ? (setupCost / combinedNetSF) * 12 : 0;
 
   return {
-    annualClaims, annualRevenue, staffAnnual,
-    denialLoss, eligLoss, daysDrag, totalLeak,
+    billingModel, providers, sfUsers, sfLicenseAnnual,
+    outsourceFeePct, reconHrs, reconCost, theirOutsourceFee,
+    annualClaims, annualRevenue, cashCollected,
+    denialLoss, eligLoss, daysDrag, totalLeak, staffAnnual: theirStaff,
     denialRec, staffRec, totalRec, residual,
     theirPlat, theirPC, theirStaff, theirTotal,
-    ourPlat, ourPC, ourStaff, ourTotal,
-    costSaving, combined,
-    ccr, ncr, daysAR, ccrLoss, ncrLoss, arCost,
-    ccrGap, ncrGap, arExcessDays,
-    ctcCurrent, ctcCurrentDollar, ctcProjected, ourCTCDollar, ctcSaving, cashCollected,
+    ourPlat, ourPC, ourStaff, ourTotal, costSaving,
+    ccr, ncr, daysAR, ncrGap, ncrGain, ccrGap, ccrReworkAvoided,
+    arExcessDays, workingCapitalReleased,
+    ctcCurrent, ctcCurrentDollar, ctcProjected, ourCTCDollar, ctcSaving,
+    combined, combinedNetSF,
     setupCost, year1Net, paybackMonths
   };
 }
@@ -1300,13 +1444,20 @@ function compute() {
 /* ── Render all results into step 3 ── */
 function renderResults(d) {
   // Hero summary box
+  set('h-netsf',    fmt(d.combinedNetSF));
   set('h-combined', fmt(d.combined));
+  set('h-sflic',    fmt(d.sfLicenseAnnual));
   set('h-year1',    fmt(d.year1Net));
   set('h-payback',  d.paybackMonths > 0 ? d.paybackMonths.toFixed(1) + ' mo' : '—');
   set('h-setup',    fmt(d.setupCost));
   set('h-bd-cost',  fmt(d.ctcSaving));
-  set('h-bd-rec',   fmt(d.totalRec));
-  set('h-bd-kpi',   fmt(d.ccrLoss + d.ncrLoss + d.arCost));
+  set('h-bd-ncr',   fmt(d.ncrGain));
+  set('h-bd-ccr',   fmt(d.ccrReworkAvoided));
+  set('h-bd-wc',    fmt(d.workingCapitalReleased));
+  set('ht-ccr-now', Math.round(d.ccr * 100) + '%');
+  set('ht-ncr-now', Math.round(d.ncr * 100) + '%');
+  set('ht-ar-now',  Math.round(d.daysAR) + ' days');
+  set('ht-ctc-now', (d.ctcCurrent * 100).toFixed(1) + '%');
 
   // Leakage
   set('r-total-leak', fmt(d.totalLeak));
@@ -1332,21 +1483,41 @@ function renderResults(d) {
   set('r-their-total', fmt(d.theirTotal));
   set('r-our-total',   fmt(d.ourTotal));
   set('r-cost-saving', fmt(d.costSaving));
-  set('r-t-plat',  fmt(d.theirPlat));
-  set('r-u-plat',  fmt(d.ourPlat));
-  set('r-t-pc',    fmt(d.theirPC));
-  set('r-u-pc',    fmt(d.ourPC));
-  set('r-t-staff', fmt(d.theirStaff));
-  set('r-u-staff', fmt(d.ourStaff));
+
+  // Dynamic row labels + values based on billing model
+  if (d.billingModel === 'outsourced') {
+    set('r-them-head', 'Current (outsourced)');
+    set('r-row1-label', 'Outsourced billing fee (' + (d.outsourceFeePct * 100).toFixed(1) + '% of collections)');
+    set('r-row2-label', 'eCloudsHealth platform + per-claim');
+    set('r-row3-label', 'Internal reconciliation staff cost');
+    set('r-t-plat',  fmt(d.theirOutsourceFee));
+    set('r-u-plat',  fmt(d.ourPlat + d.ourPC));
+    set('r-t-pc',    '—');
+    set('r-u-pc',    '—');
+    set('r-t-staff', fmt(d.theirStaff));
+    set('r-u-staff', fmt(d.ourStaff));
+  } else {
+    set('r-them-head', 'Current system (est.)');
+    set('r-row1-label', 'Platform / software fee (annual)');
+    set('r-row2-label', 'Per-claim processing cost (annual)');
+    set('r-row3-label', 'Billing staff cost (annual)');
+    set('r-t-plat',  fmt(d.theirPlat));
+    set('r-u-plat',  fmt(d.ourPlat));
+    set('r-t-pc',    fmt(d.theirPC));
+    set('r-u-pc',    fmt(d.ourPC));
+    set('r-t-staff', fmt(d.theirStaff));
+    set('r-u-staff', fmt(d.ourStaff));
+  }
   set('r-t-total', fmt(d.theirTotal));
   set('r-u-total', fmt(d.ourTotal));
+  set('r-sf-users',  Math.round(d.sfUsers));
+  set('r-sf-annual', fmt(d.sfLicenseAnnual));
   set('r-combined', fmt(d.combined));
   set('r-combined-cost', fmt(d.ctcSaving));
-  set('r-combined-rec',  fmt(d.totalRec));
-  set('r-combined-kpi',  fmt(d.ccrLoss + d.ncrLoss + d.arCost));
-  set('r-ccr-loss', fmt(d.ccrLoss));
-  set('r-ncr-loss', fmt(d.ncrLoss));
-  set('r-ar-cost',  fmt(d.arCost));
+  set('r-combined-rec',  fmt(d.ncrGain));
+  set('r-ccr-loss', fmt(d.ccrReworkAvoided));
+  set('r-ncr-loss', fmt(d.ncrGain));
+  set('r-ar-cost',  fmt(d.workingCapitalReleased));
   set('r-ccr-pct',  Math.round(d.ccr * 100) + '%');
   set('r-ncr-pct',  Math.round(d.ncr * 100) + '%');
   set('r-ar-pct',   Math.round(d.daysAR) + ' days');
@@ -1383,21 +1554,32 @@ function refreshRecovery() {
   set('cv3', fmt(d.residual));
   set('r-combined', fmt(d.combined));
   set('r-combined-cost', fmt(d.ctcSaving));
-  set('r-combined-rec',  fmt(d.totalRec));
-  set('r-combined-kpi',  fmt(d.ccrLoss + d.ncrLoss + d.arCost));
+  set('r-combined-rec',  fmt(d.ncrGain));
   // Hero box
+  set('h-netsf',    fmt(d.combinedNetSF));
   set('h-combined', fmt(d.combined));
+  set('h-sflic',    fmt(d.sfLicenseAnnual));
   set('h-year1',    fmt(d.year1Net));
   set('h-payback',  d.paybackMonths > 0 ? d.paybackMonths.toFixed(1) + ' mo' : '—');
   set('h-bd-cost',  fmt(d.ctcSaving));
-  set('h-bd-rec',   fmt(d.totalRec));
-  set('h-bd-kpi',   fmt(d.ccrLoss + d.ncrLoss + d.arCost));
+  set('h-bd-ncr',   fmt(d.ncrGain));
+  set('h-bd-ccr',   fmt(d.ccrReworkAvoided));
+  set('h-bd-wc',    fmt(d.workingCapitalReleased));
 }
 
 /* ── Complexity selector ── */
 function selectComplexity(btn) {
   document.querySelectorAll('.complexity-opt').forEach(o => o.classList.remove('selected'));
   btn.classList.add('selected');
+}
+
+/* ── Billing model selector ── */
+function selectBilling(btn) {
+  document.querySelectorAll('.billing-opt').forEach(o => o.classList.remove('selected'));
+  btn.classList.add('selected');
+  const model = btn.dataset.model;
+  document.getElementById('inhouse-fields').style.display    = (model === 'inhouse')    ? '' : 'none';
+  document.getElementById('outsourced-fields').style.display = (model === 'outsourced') ? '' : 'none';
 }
 
 /* ── Step 2 → 3 ── */
@@ -1423,17 +1605,20 @@ function goStep3() {
   // Post lead data to Google Sheets
   const payload = {
     name, company, title, email, phone,
+    billingModel:  d.billingModel,
+    providers:     Math.round(d.providers),
+    sfUsers:       Math.round(d.sfUsers),
     claims:        parseFloat(document.getElementById('claims').value)       || 0,
     avgClaim:      parseFloat(document.getElementById('avg_claim').value)    || 0,
     annualClaims:  Math.round(d.annualClaims),
     annualRevenue: Math.round(d.annualRevenue),
     denialRate:    parseFloat(document.getElementById('denial_rate').value)  || 0,
     reworkRate:    parseFloat(document.getElementById('rework_rate').value)  || 0,
-    staffHrs:      parseFloat(document.getElementById('staff_hrs').value)    || 0,
-    staffCost:     parseFloat(document.getElementById('staff_cost').value)   || 0,
+    outsourceFee:  d.billingModel === 'outsourced' ? (d.outsourceFeePct * 100).toFixed(1) + '%' : '—',
+    reconHrs:      d.billingModel === 'outsourced' ? Math.round(d.reconHrs) : '—',
+    staffAnnual:   Math.round(d.staffAnnual),
     totalLeak:     Math.round(d.totalLeak),
     denialLoss:    Math.round(d.denialLoss),
-    staffAnnual:   Math.round(d.staffAnnual),
     eligLoss:      Math.round(d.eligLoss),
     daysDrag:      Math.round(d.daysDrag),
     recRate:       parseFloat(document.getElementById('recovery_rate').value) || 70,
@@ -1442,17 +1627,19 @@ function goStep3() {
     staffRec:      Math.round(d.staffRec),
     theirTotal:    Math.round(d.theirTotal),
     ourTotal:      Math.round(d.ourTotal),
+    sfLicenseAnnual: Math.round(d.sfLicenseAnnual),
     costSaving:    Math.round(d.costSaving),
-    combined:      Math.round(d.combined),
     ccr:           Math.round(d.ccr * 100) + '%',
     ncr:           Math.round(d.ncr * 100) + '%',
     daysAR:        Math.round(d.daysAR),
-    ccrLoss:       Math.round(d.ccrLoss),
-    ncrLoss:       Math.round(d.ncrLoss),
-    arCost:        Math.round(d.arCost),
+    ncrGain:           Math.round(d.ncrGain),
+    ccrReworkAvoided:  Math.round(d.ccrReworkAvoided),
+    workingCapital:    Math.round(d.workingCapitalReleased),
     ctcCurrent:    (d.ctcCurrent * 100).toFixed(1) + '%',
     ctcProjected:  (d.ctcProjected * 100).toFixed(1) + '%',
     ctcSaving:     Math.round(d.ctcSaving),
+    combined:      Math.round(d.combined),
+    combinedNetSF: Math.round(d.combinedNetSF),
     setupCost:     Math.round(d.setupCost),
     year1Net:      Math.round(d.year1Net),
     paybackMonths: d.paybackMonths.toFixed(1)
