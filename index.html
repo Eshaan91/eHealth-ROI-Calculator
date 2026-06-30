@@ -333,6 +333,7 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
 }
 
 /* ── Billing model toggle ── */
+.field-hint-line { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; max-width: 640px; }
 .billing-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
 @media(max-width: 600px) { .billing-toggle { grid-template-columns: 1fr; } }
 .billing-opt {
@@ -444,6 +445,8 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
 }
 .btn-pdf:hover { background: var(--blue); color: #fff; }
 .btn-pdf:disabled { opacity: .6; cursor: not-allowed; }
+.btn-reset { color: var(--muted); border-color: #d9dde5; }
+.btn-reset:hover { background: #4b5563; color: #fff; border-color: #4b5563; }
 
 @media print {
   /* Hide everything except step 3 results */
@@ -577,7 +580,7 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
       <div class="card-title">Claims submitted per month</div>
       <div class="input-wrap">
         <span class="prefix">#</span>
-        <input type="number" id="claims" value="500" min="1">
+        <input type="number" id="claims" value="500" min="1" oninput="autoScaleResidual()">
       </div>
     </div>
 
@@ -672,16 +675,17 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
       <div class="card-label">Cost to Collect (CTC)</div>
       <div class="card-title">% of collections spent on billing operations</div>
       <div class="slider-row">
-        <input type="range" id="ctc" class="slider-blue" min="2" max="15" value="7" step="0.5"
-          oninput="setSV('ctc_val', this.value, '%')">
-        <span class="sv-blue" id="ctc_val">7%</span>
+        <input type="range" id="ctc" class="slider-blue" min="2" max="15" value="10" step="0.5"
+          oninput="setSV('ctc_val', this.value, '%'); ctcEdited=true">
+        <span class="sv-blue" id="ctc_val">10%</span>
       </div>
-      <div class="hint">HFMA best practice: 2–3%</div>
+      <div class="hint">Include all billing costs — staff salaries, software, clearinghouse &amp; outsourced fees. Auto-scales with practice size; adjust if needed.</div>
     </div>
 
   </div>
 
   <div class="report-section-label" style="margin-top:8px">Step 3 · Your billing operation</div>
+  <p class="field-hint-line">How is your billing handled today? (Helps us understand your setup — your Cost to Collect above already reflects your current total cost.)</p>
   <div class="billing-toggle">
     <button type="button" class="billing-opt selected" data-model="inhouse" onclick="selectBilling(this)">
       <span class="bt-name">In-house billing</span>
@@ -693,55 +697,24 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
     </button>
   </div>
 
-  <!-- In-house fields -->
-  <div class="grid" id="inhouse-fields">
+  <div class="report-section-label" style="margin-top:20px">Residual team to operate eCloudsHealth</div>
+  <p class="field-hint-line">Even with automation, a small internal team still operates the system (oversight, exceptions, posting). We include this in your projected Cost to Collect so the comparison is honest.</p>
+  <div class="grid">
     <div class="card">
-      <div class="card-label">Manual billing hours</div>
-      <div class="card-title">Staff hours/week on manual billing</div>
+      <div class="card-label">Residual team hours</div>
+      <div class="card-title">Total staff hours/week to operate the system</div>
       <div class="input-wrap">
-        <input type="number" id="staff_hrs" value="20" min="0" class="no-prefix">
+        <input type="number" id="residual_hrs" value="5" min="0" class="no-prefix" oninput="residualEdited=true">
         <span class="suffix">hrs/wk</span>
       </div>
+      <div class="hint">Auto-scales with your claim volume — adjust if needed</div>
     </div>
     <div class="card">
-      <div class="card-label">Fully loaded staff cost</div>
-      <div class="card-title">Hourly cost of billing staff</div>
+      <div class="card-label">Fully loaded hourly cost</div>
+      <div class="card-title">Average loaded cost per staff hour</div>
       <div class="input-wrap">
         <span class="prefix">$</span>
-        <input type="number" id="staff_cost" value="35" min="1">
-      </div>
-    </div>
-  </div>
-
-  <!-- Outsourced fields -->
-  <div id="outsourced-fields" style="display:none">
-    <div class="grid">
-      <div class="card">
-        <div class="card-label">Outsourced billing fee</div>
-        <div class="card-title">% of collections paid to your biller</div>
-        <div class="slider-row">
-          <input type="range" id="outsource_fee" class="slider-blue" min="4" max="10" value="5.5" step="0.5"
-            oninput="setSV('outsource_fee_val', this.value, '%')">
-          <span class="sv-blue" id="outsource_fee_val">5.5%</span>
-        </div>
-        <div class="hint">Industry typical: 4–10% of collections</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Internal reconciliation hours</div>
-        <div class="card-title">Staff hours/week reconciling the biller</div>
-        <div class="input-wrap">
-          <input type="number" id="recon_hrs" value="10" min="0" class="no-prefix">
-          <span class="suffix">hrs/wk</span>
-        </div>
-        <div class="hint">Often under-tracked — payments, denials, posting checks</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Fully loaded staff cost</div>
-        <div class="card-title">Hourly cost of internal staff</div>
-        <div class="input-wrap">
-          <span class="prefix">$</span>
-          <input type="number" id="recon_cost" value="35" min="1">
-        </div>
+        <input type="number" id="residual_cost" value="35" min="1">
       </div>
     </div>
   </div>
@@ -898,9 +871,9 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
     <div class="hero-eyebrow">Estimated annual impact with eCloudsHealth</div>
     <div class="hero-main">
       <div class="hero-primary">
-        <div class="hero-label">Net annual benefit (after Salesforce licensing)</div>
+        <div class="hero-label">Net annual benefit (all-in)</div>
         <div class="hero-value accent" id="h-netsf">—</div>
-        <div class="hero-sublabel">Gross combined benefit <span id="h-combined">—</span> · less SF licensing <span id="h-sflic">—</span></div>
+        <div class="hero-sublabel">Recurring benefit after all eCloudsHealth costs — fee, Salesforce licensing, and residual staff</div>
       </div>
       <div class="hero-secondary">
         <div class="hero-stat">
@@ -957,8 +930,8 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
           <div class="m-sub">per year</div>
         </div>
         <div class="metric">
-          <div class="m-label">Wasted staff cost (manual work)</div>
-          <div class="mv mv-sm" id="r-staff-loss">—</div>
+          <div class="m-label">Eligibility / intake errors</div>
+          <div class="mv mv-sm" id="r-elig-loss">—</div>
           <div class="m-sub">per year</div>
         </div>
       </div>
@@ -966,9 +939,8 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
         <div class="report-section-label" style="margin-bottom:14px">Leakage breakdown</div>
         <div class="bar-rows">
           <div class="brow"><span class="brow-label">Denials never reworked</span><div class="brow-track"><div class="brow-fill" id="b1" style="width:0%"></div></div><span class="brow-val" id="bv1">—</span></div>
-          <div class="brow"><span class="brow-label">Manual billing staff cost</span><div class="brow-track"><div class="brow-fill" id="b2" style="width:0%"></div></div><span class="brow-val" id="bv2">—</span></div>
-          <div class="brow"><span class="brow-label">Eligibility errors / intake rework</span><div class="brow-track"><div class="brow-fill" id="b3" style="width:0%"></div></div><span class="brow-val" id="bv3">—</span></div>
-          <div class="brow"><span class="brow-label">Days-to-pay drag (cash flow cost)</span><div class="brow-track"><div class="brow-fill" id="b4" style="width:0%"></div></div><span class="brow-val" id="bv4">—</span></div>
+          <div class="brow"><span class="brow-label">Eligibility errors / intake rework</span><div class="brow-track"><div class="brow-fill" id="b2" style="width:0%"></div></div><span class="brow-val" id="bv2">—</span></div>
+          <div class="brow"><span class="brow-label">Days-to-pay drag (cash flow cost)</span><div class="brow-track"><div class="brow-fill" id="b3" style="width:0%"></div></div><span class="brow-val" id="bv3">—</span></div>
         </div>
       </div>
     </div>
@@ -1036,8 +1008,8 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
           <div class="m-sub">per year</div>
         </div>
         <div class="metric">
-          <div class="m-label">Staff time freed (automation)</div>
-          <div class="mv mv-sm" id="r-staff-rec">—</div>
+          <div class="m-label">Eligibility recovery (auto checks)</div>
+          <div class="mv mv-sm" id="r-elig-rec">—</div>
           <div class="m-sub">per year</div>
         </div>
       </div>
@@ -1068,47 +1040,47 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
     <div class="panel-body">
       <div class="metrics-row">
         <div class="metric">
-          <div class="m-label">Your current annual billing cost</div>
+          <div class="m-label">Your current cost to collect</div>
           <div class="mv mv-lg" id="r-their-total">—</div>
-          <div class="m-sub">est. total cost today</div>
+          <div class="m-sub" id="r-their-sub">based on your stated CTC</div>
         </div>
         <div class="metric hl-blue">
-          <div class="m-label">eCloudsHealth annual cost</div>
+          <div class="m-label">eCloudsHealth all-in annual cost</div>
           <div class="mv mv-lg mv-blue" id="r-our-total">—</div>
-          <div class="m-sub">platform + per-claim + staff</div>
+          <div class="m-sub" id="r-our-sub">fee + SF licensing + residual staff</div>
         </div>
         <div class="metric">
-          <div class="m-label">Cost saving (benchmark estimate)</div>
+          <div class="m-label">Annual cost saving</div>
           <div class="mv mv-lg" id="r-cost-saving">—</div>
-          <div class="m-sub">see CTC section for validated figure</div>
+          <div class="m-sub">vs. your current cost</div>
         </div>
       </div>
       <div class="inner-div">
-        <div class="report-section-label" style="margin-bottom:8px">Line-by-line breakdown</div>
-        <div class="note-box">
-          Current system costs are estimated using industry benchmarks — approx. $5/claim for clearinghouse and manual processing (MGMA 2023), plus a $3K/yr platform baseline. Your actual costs may differ.
+        <div class="report-section-label" style="margin-bottom:8px">How eCloudsHealth is priced</div>
+        <div class="note-box" id="r-pricing-note">
+          —
         </div>
         <table class="compare-table">
           <thead>
             <tr>
               <th>Cost item</th>
-              <th id="r-them-head">Current system <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af">(est.)</span></th>
+              <th>Current</th>
               <th>eCloudsHealth</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="col-label" id="r-row1-label">Platform / software fee (annual)</td><td class="col-them" id="r-t-plat">—</td><td class="col-us" id="r-u-plat">—</td></tr>
-            <tr><td class="col-label" id="r-row2-label">Per-claim processing cost (annual)</td><td class="col-them" id="r-t-pc">—</td><td class="col-us" id="r-u-pc">—</td></tr>
-            <tr><td class="col-label" id="r-row3-label">Billing staff cost (annual)</td><td class="col-them" id="r-t-staff">—</td><td class="col-us" id="r-u-staff">—</td></tr>
+            <tr><td class="col-label">eCloudsHealth platform fee</td><td class="col-them" id="r-t-total">—</td><td class="col-us" id="r-u-fee">—</td></tr>
+            <tr><td class="col-label">Salesforce Health Cloud licensing</td><td class="col-them">incl. in your CTC</td><td class="col-us" id="r-u-sf">—</td></tr>
+            <tr><td class="col-label">Residual staff to operate system</td><td class="col-them">incl. in your CTC</td><td class="col-us" id="r-u-resid">—</td></tr>
             <tr class="total-row">
-              <td class="col-label" style="font-size:14px;color:#111827">Total annual cost</td>
-              <td class="col-them" id="r-t-total" style="font-size:16px">—</td>
+              <td class="col-label" style="font-size:14px;color:#111827">All-in annual cost to collect</td>
+              <td class="col-them" id="r-t-allin" style="font-size:16px">—</td>
               <td class="col-us"   id="r-u-total" style="font-size:16px">—</td>
             </tr>
           </tbody>
         </table>
         <div class="note-box" style="margin-top:14px">
-          <strong>Salesforce Health Cloud licensing</strong> (<span id="r-sf-users">—</span> users × $350/user/mo = <span id="r-sf-annual">—</span>/yr) is paid directly to Salesforce and is required infrastructure for the eCloudsHealth platform. It is shown separately and is deducted in the "net annual benefit" figure at the top of this report.
+          <strong>Salesforce Health Cloud licensing</strong> (<span id="r-sf-users">—</span> users × $350/user/mo = <span id="r-sf-annual">—</span>/yr) is billed directly by Salesforce as required platform infrastructure. Your projected cost to collect also includes the residual internal staff needed to operate the system. All three layers — our fee, Salesforce licensing, and residual staff — are included in your projected Cost to Collect and netted in the benefit figures at the top of this report.
         </div>
         <div class="savings-callout">
           <div style="flex:1;min-width:200px">
@@ -1169,7 +1141,7 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
           </div>
         </div>
         <div class="note-box" style="margin-top:18px">
-          CTC is calculated on core billing operation costs — billing staff, platform, and per-claim fees — applied consistently across both columns. Per HFMA's full definition, costs such as fringe benefits, collection agency fees, and IT infrastructure are excluded here and would increase CTC on both sides equally. The delta between the two remains valid.
+          Your current Cost to Collect is the figure you provided, which reflects your total billing operation cost today (including your staff). Your projected Cost to Collect with eCloudsHealth is the all-in figure of our platform fee (the greater of a $30,000 annual minimum or 2.5% of net collections), your Salesforce Health Cloud licensing, and the residual internal staff needed to operate the system. This is a like-for-like comparison of total cost to collect on each side. Figures exclude costs such as fringe benefits and IT infrastructure that would affect both scenarios.
         </div>
       </div>
     </div>
@@ -1178,22 +1150,30 @@ input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(
   <!-- PDF Download -->
   <div class="pdf-bar">
     <div class="pdf-bar-text">
-      <strong>Share this report with your team</strong>
-      <span>Download a full PDF copy of your personalized revenue leakage report.</span>
+      <strong>Share this report or run another scenario</strong>
+      <span>Download a PDF copy, or reset to try different numbers.</span>
     </div>
-    <button class="btn-pdf" id="pdf-btn" onclick="downloadPDF()">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 2v8M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/>
-      </svg>
-      Download PDF report
-    </button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-pdf btn-reset" id="reset-btn" onclick="resetCalculator()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/>
+        </svg>
+        Reset &amp; start over
+      </button>
+      <button class="btn-pdf" id="pdf-btn" onclick="downloadPDF()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v8M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/>
+        </svg>
+        Download PDF report
+      </button>
+    </div>
   </div>
 
   <div class="disclaimer">
     <div class="disclaimer-title">Important disclaimer</div>
     <p>This Revenue Leakage Calculator (the "Tool") is provided by eCloudsHealth for informational and illustrative purposes only. All figures, projections, savings, recovery amounts, cost-to-collect comparisons, and benefits shown are <strong>estimates</strong> generated from the inputs you provide combined with general healthcare industry benchmarks (including those published by MGMA, HFMA, and CMS).</p>
     <p>These estimates <strong>do not constitute a guarantee, warranty, promise, or representation</strong> of actual results, savings, or financial outcomes. Actual results will vary — potentially materially — based on your organization's specialty, payer mix, contract terms, patient population, current systems, workflow maturity, staffing, regulatory environment, and numerous other factors outside eCloudsHealth's control.</p>
-    <p>Cost-to-Collect, Clean Claim Rate, Net Collection Rate, and Days in A/R comparisons are calculated on a limited set of core billing-operation costs applied consistently across both current-state and projected scenarios. They exclude certain costs (such as fringe benefits, collection agency fees, and IT infrastructure) that, per HFMA's full definitions, would affect both scenarios. Industry benchmark assumptions (e.g., ~$5 per claim processing cost) are generalizations and may not reflect your actual costs.</p>
+    <p>Cost-to-Collect, Clean Claim Rate, Net Collection Rate, and Days in A/R comparisons are calculated on a consistent basis across current-state and projected scenarios. Your current Cost to Collect is taken from the figure you provide. The projected Cost to Collect reflects the eCloudsHealth platform fee (the greater of a $30,000 annual minimum or 2.5% of net collections), Salesforce Health Cloud licensing billed separately by Salesforce, and an estimate of the residual internal staff needed to operate the system. Certain costs (such as fringe benefits and IT infrastructure) are excluded and would affect both scenarios. All assumptions are generalizations and may not reflect your actual costs.</p>
     <p>This Tool does not constitute financial, accounting, legal, tax, or professional advice, and should not be relied upon as the sole basis for any business decision. You should consult your own qualified advisors and conduct independent due diligence before making any purchasing or financial decision. eCloudsHealth disclaims all liability for any action taken or not taken in reliance on the outputs of this Tool to the fullest extent permitted by law.</p>
     <p>By using this Tool and submitting your information, you acknowledge and agree to the above. Information you submit may be used by eCloudsHealth to contact you regarding its products and services in accordance with its Privacy Policy.</p>
     <div class="disclaimer-footer">© <span id="year"></span> eCloudsHealth · Built on Salesforce Health Cloud · eclouds.com</div>
@@ -1222,6 +1202,29 @@ function set(id, val) {
 function setW(id, pct) {
   const el = document.getElementById(id);
   if (el) el.style.width = Math.max(0, Math.min(100, Math.round(pct))) + '%';
+}
+
+/* ── Auto-scale residual hours + CTC to claim volume ── */
+/* Residual: ~1 staff hr/week per 100 claims/month, floor 5 hrs/wk. */
+/* CTC by size: ≤500/mo → 10%, 501–1500 → 7.5%, 1501+ → 5%. */
+/* Both stop auto-updating once the user edits them manually. */
+let residualEdited = false;
+let ctcEdited = false;
+function autoScaleResidual() {
+  const claims = parseFloat(document.getElementById('claims').value) || 0;
+  if (!residualEdited) {
+    const scaled = Math.max(5, Math.round(claims / 100));
+    const el = document.getElementById('residual_hrs');
+    if (el) el.value = scaled;
+  }
+  if (!ctcEdited) {
+    let ctcVal;
+    if (claims <= 500)        ctcVal = 10;
+    else if (claims <= 1500)  ctcVal = 7.5;
+    else                      ctcVal = 5;
+    const ctcEl = document.getElementById('ctc');
+    if (ctcEl) { ctcEl.value = ctcVal; setSV('ctc_val', ctcVal, '%'); }
+  }
 }
 function showStep(n) {
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
@@ -1329,62 +1332,56 @@ function compute() {
   const denialRate  = parseFloat(document.getElementById('denial_rate').value)   / 100;
   const reworkRate  = parseFloat(document.getElementById('rework_rate').value)   / 100;
   const recRate     = parseFloat(document.getElementById('recovery_rate').value) / 100;
-  const ebridgeFee  = 18000;
-  const perClaimFee = 2.0;
   const sfLicensePerUserMo = 350;
   const ccr         = parseFloat(document.getElementById('ccr').value)      / 100;
   const ncr         = parseFloat(document.getElementById('ncr').value)      / 100;
   const daysAR      = parseFloat(document.getElementById('days_ar').value)  || 0;
   const ctcCurrent  = parseFloat(document.getElementById('ctc').value)      / 100;
 
-  // Billing model
+  // Billing model (qualifying data point only — not used in cost math)
   const billingModel = document.querySelector('.billing-opt.selected').dataset.model; // 'inhouse' | 'outsourced'
 
   const annualClaims  = claims * 12;
   const annualRevenue = annualClaims * avgClaim;
   const cashCollected = annualRevenue * ncr;
 
-  // ── Their current billing cost (branches by model) ──
-  let theirStaff, theirPlat, theirPC, theirOutsourceFee, theirTotal, staffAnnual;
-  let outsourceFeePct = 0, reconHrs = 0, reconCost = 0;
+  // ── Residual team to operate eCloudsHealth (applies to both models) ──
+  const residualHrs  = parseFloat(document.getElementById('residual_hrs').value)  || 0;
+  const residualCost = parseFloat(document.getElementById('residual_cost').value) || 0;
+  const residualStaffAnnual = residualHrs * 52 * residualCost;
 
-  if (billingModel === 'inhouse') {
-    const staffHrs  = parseFloat(document.getElementById('staff_hrs').value)  || 0;
-    const staffCost = parseFloat(document.getElementById('staff_cost').value) || 0;
-    staffAnnual = staffHrs * 52 * staffCost;
-    theirStaff  = staffAnnual;
-    theirPlat   = 3000;                  // assumed legacy platform/clearinghouse
-    theirPC     = annualClaims * 5;      // ~$5/claim manual processing
-    theirOutsourceFee = 0;
-    theirTotal  = theirPlat + theirPC + theirStaff;
-  } else {
-    outsourceFeePct = parseFloat(document.getElementById('outsource_fee').value) / 100;
-    reconHrs        = parseFloat(document.getElementById('recon_hrs').value)  || 0;
-    reconCost       = parseFloat(document.getElementById('recon_cost').value) || 0;
-    staffAnnual     = reconHrs * 52 * reconCost;        // internal reconciliation staff cost
-    theirStaff      = staffAnnual;
-    theirOutsourceFee = cashCollected * outsourceFeePct; // % of collections
-    theirPlat       = 0;
-    theirPC         = 0;
-    theirTotal      = theirOutsourceFee + theirStaff;
-  }
+  // ── eCloudsHealth recurring fee (to eHealth) ──
+  // Greater of a $30K floor OR 2.5% of net collections. Floor = $18K platform + $12K
+  // (500 claims/mo min × $2). Targets ~2.5% at scale; floor protects small accounts.
+  const ehealthFloor   = 30000;
+  const targetRatePct  = 0.025;
+  const ourFeeByRate   = targetRatePct * cashCollected;
+  const ourFee         = Math.max(ehealthFloor, ourFeeByRate);
+  const feeIsFloor     = ourFee === ehealthFloor && ourFeeByRate < ehealthFloor;
+  const ourFeePct      = cashCollected > 0 ? ourFee / cashCollected : 0;
 
-  // ── eCloudsHealth cost (same regardless of their model) ──
-  const ourPlat   = ebridgeFee;
-  const ourPC     = annualClaims * perClaimFee;
-  const ourStaff  = staffAnnual * 0.40;                 // 60% of staff effort automated away
-  const ourTotal  = ourPlat + ourPC + ourStaff;
-
-  const costSaving = theirTotal - ourTotal;
-
-  // ── Salesforce Health Cloud licensing (paid to Salesforce, disclosed separately) ──
+  // ── Salesforce Health Cloud licensing (paid to Salesforce) ──
   const sfLicenseAnnual = sfUsers * sfLicensePerUserMo * 12;
+  const sfLicensePct    = cashCollected > 0 ? sfLicenseAnnual / cashCollected : 0;
 
-  // ── Leakage (for the leakage panel) ──
+  // ── eCloudsHealth all-in cost = 3 layers: fee + SF licensing + residual staff ──
+  const residualPct = cashCollected > 0 ? residualStaffAnnual / cashCollected : 0;
+  const ourAllInDollar = ourFee + sfLicenseAnnual + residualStaffAnnual;
+  const ourTotal  = ourFee;   // the eCloudsHealth fee component (used in cost-saving math below)
+
+  // ── Their current cost = their stated CTC% × cash collected (includes their staff) ──
+  const theirTotal = ctcCurrent * cashCollected;
+
+  // Cost saving = their total cost to collect − our all-in cost to collect (all 3 layers).
+  // This is the honest, like-for-like comparison: their CTC already includes their staff,
+  // so we compare against our fee + SF + residual staff.
+  const costSaving = theirTotal - ourAllInDollar;
+
+  // ── Leakage (lost REVENUE only — staff cost removed; it lives in CTC, not leakage) ──
   const denialLoss  = annualRevenue * denialRate * reworkRate;
   const eligLoss    = annualRevenue * 0.03;
   const daysDrag    = annualRevenue * 0.02;
-  const totalLeak   = denialLoss + theirStaff + eligLoss + daysDrag;
+  const totalLeak   = denialLoss + eligLoss + daysDrag;
 
   // ── KPI calculations (corrected treatment) ──
   const ccrBenchmark = 0.95;
@@ -1395,8 +1392,7 @@ function compute() {
   const ncrGap   = Math.max(0, ncrBenchmark - ncr);
   const ncrGain  = annualRevenue * ncrGap;
 
-  // CCR gap → REWORK COST AVOIDED, not lost revenue.
-  // Cost of reworking a denied/rejected claim ~ $25 industry avg (MGMA).
+  // CCR gap → REWORK COST AVOIDED, not lost revenue (~$25/claim rework, MGMA).
   const ccrGap        = Math.max(0, ccrBenchmark - ccr);
   const reworkPerClaim = 25;
   const ccrReworkAvoided = annualClaims * ccrGap * reworkPerClaim;
@@ -1404,53 +1400,52 @@ function compute() {
   // A/R days → ONE-TIME working capital released (NOT recurring), excluded from combined.
   const arExcessDays   = Math.max(0, daysAR - arBenchmark);
   const dailyRevenue   = annualRevenue / 365;
-  const workingCapitalReleased = arExcessDays * dailyRevenue;   // one-time cash freed
+  const workingCapitalReleased = arExcessDays * dailyRevenue;
 
-  // ── Recovery (denial rework recovery from automation) ──
+  // ── Recovery (revenue recovered via automation — staff time removed) ──
   const denialRec   = denialLoss  * recRate;
-  const staffRec    = theirStaff * 0.60;
   const eligRec     = eligLoss    * recRate;
-  const totalRec    = denialRec + staffRec + eligRec;
+  const totalRec    = denialRec + eligRec;
   const residual    = Math.max(0, totalLeak - totalRec);
 
-  // ── Cost to Collect (CTC) ──
+  // ── Cost to Collect (CTC) — 3 layers on our side ──
+  // Their CTC = their input (already includes their staff).
+  // Projected CTC = our fee% + SF licensing% + residual staff% (true all-in on our platform).
   const ctcCurrentDollar = ctcCurrent * cashCollected;
-  const ourCTCDollar     = ourTotal;
-  const ctcProjected     = cashCollected > 0 ? ourCTCDollar / cashCollected : 0;
+  const ctcProjected     = ourFeePct + sfLicensePct + residualPct;   // all-in incl. residual staff
+  const ourCTCDollar     = ourAllInDollar;                            // fee + SF + residual staff
   const ctcSaving        = Math.max(0, ctcCurrentDollar - ourCTCDollar);
 
   // ── Combined annual benefit (RECURRING only) ──
-  // = cost saving (CTC reduction) + NCR revenue gain.
-  // CTC saving already captures all billing-operation cost reductions, INCLUDING the
-  // labor saved on claim rework — so CCR rework-avoided is shown as context only and
-  // is NOT added here (that would double-count it against CTC saving).
-  // A/R working capital is one-time → also excluded from the recurring total.
-  const combined        = ctcSaving + ncrGain;
-  const combinedNetSF   = combined - sfLicenseAnnual;   // net of Salesforce licensing
+  // = cost saving (their all-in CTC − our all-in CTC) + NCR revenue gain.
+  // costSaving already nets SF licensing AND residual staff (all 3 layers), so it is the
+  // true recurring cost reduction. SF is NOT deducted again. No double-count.
+  // CCR rework-avoided and A/R working capital are context only (not added).
+  const combined        = costSaving + ncrGain;
+  const combinedNetSF   = combined;   // SF & residual already inside costSaving — net benefit is final
 
-  // ── One-time setup + Year 1 / payback (uses net-of-SF for honesty) ──
+  // ── One-time setup + Year 1 / payback ──
   const setupCost     = parseFloat(document.querySelector('.complexity-opt.selected').dataset.cost) || 70000;
   const year1Net      = combinedNetSF - setupCost;
   const paybackMonths = combinedNetSF > 0 ? (setupCost / combinedNetSF) * 12 : 0;
 
   // ── ROI ──
-  // Recurring net benefit = same as combinedNetSF (recurring, SF licensing already deducted)
   const recurringNet  = combinedNetSF;
-  // Year 1 investment = setup + eCloudsHealth annual cost + SF licensing
-  const year1Invest   = setupCost + ourTotal + sfLicenseAnnual;
-  // Recurring investment = eCloudsHealth annual cost + SF licensing (no setup)
-  const recurringInvest = ourTotal + sfLicenseAnnual;
+  // Year 1 investment = setup + our all-in annual cost (fee + SF + residual staff)
+  const year1Invest   = setupCost + ourAllInDollar;
+  // Recurring investment = our all-in annual cost (no setup)
+  const recurringInvest = ourAllInDollar;
   const roiYear1      = year1Invest > 0 ? (year1Net / year1Invest) * 100 : 0;
   const roiRecurring  = recurringInvest > 0 ? (recurringNet / recurringInvest) * 100 : 0;
 
   return {
-    billingModel, providers, sfUsers, sfLicenseAnnual,
-    outsourceFeePct, reconHrs, reconCost, theirOutsourceFee,
+    billingModel, providers, sfUsers, sfLicenseAnnual, sfLicensePct,
+    residualHrs, residualCost, residualStaffAnnual, residualPct,
     annualClaims, annualRevenue, cashCollected,
-    denialLoss, eligLoss, daysDrag, totalLeak, staffAnnual: theirStaff,
-    denialRec, staffRec, totalRec, residual,
-    theirPlat, theirPC, theirStaff, theirTotal,
-    ourPlat, ourPC, ourStaff, ourTotal, costSaving,
+    denialLoss, eligLoss, daysDrag, totalLeak,
+    denialRec, eligRec, totalRec, residual,
+    theirTotal, ourFee, ourFeePct, feeIsFloor, ehealthFloor, targetRatePct,
+    ourAllInDollar, ourTotal, costSaving,
     ccr, ncr, daysAR, ncrGap, ncrGain, ccrGap, ccrReworkAvoided,
     arExcessDays, workingCapitalReleased,
     ctcCurrent, ctcCurrentDollar, ctcProjected, ourCTCDollar, ctcSaving,
@@ -1464,15 +1459,13 @@ function compute() {
 function renderResults(d) {
   // Hero summary box
   set('h-netsf',    fmt(d.combinedNetSF));
-  set('h-combined', fmt(d.combined));
-  set('h-sflic',    fmt(d.sfLicenseAnnual));
   set('h-year1',    fmt(d.year1Net));
   set('h-recurring', fmt(d.recurringNet));
   set('h-roi-y1',   Math.round(d.roiYear1) + '%');
   set('h-roi-rec',  Math.round(d.roiRecurring) + '%');
   set('h-payback',  d.paybackMonths > 0 ? d.paybackMonths.toFixed(1) + ' mo' : '—');
   set('h-setup',    fmt(d.setupCost));
-  set('h-bd-cost',  fmt(d.ctcSaving));
+  set('h-bd-cost',  fmt(d.costSaving));
   set('h-bd-ncr',   fmt(d.ncrGain));
   set('h-bd-ccr',   fmt(d.ccrReworkAvoided));
   set('h-bd-wc',    fmt(d.workingCapitalReleased));
@@ -1482,19 +1475,19 @@ function renderResults(d) {
   set('ht-ctc-now', (d.ctcCurrent * 100).toFixed(1) + '%');
   set('ht-ctc-target', (d.ctcProjected * 100).toFixed(1) + '%');
 
-  // Leakage
+  // Leakage (3 buckets — staff removed)
   set('r-total-leak', fmt(d.totalLeak));
   set('r-denial-loss', fmt(d.denialLoss));
-  set('r-staff-loss', fmt(d.staffAnnual));
-  const leakItems = [d.denialLoss, d.staffAnnual, d.eligLoss, d.daysDrag];
+  set('r-elig-loss',   fmt(d.eligLoss));
+  const leakItems = [d.denialLoss, d.eligLoss, d.daysDrag];
   const leakMax   = Math.max(...leakItems, 1);
-  ['b1','b2','b3','b4'].forEach((id, i) => setW(id, (leakItems[i] / leakMax) * 100));
-  ['bv1','bv2','bv3','bv4'].forEach((id, i) => set(id, fmt(leakItems[i])));
+  ['b1','b2','b3'].forEach((id, i) => setW(id, (leakItems[i] / leakMax) * 100));
+  ['bv1','bv2','bv3'].forEach((id, i) => set(id, fmt(leakItems[i])));
 
-  // Recovery
+  // Recovery (2 items — staff time removed)
   set('r-total-rec',  fmt(d.totalRec));
   set('r-denial-rec', fmt(d.denialRec));
-  set('r-staff-rec',  fmt(d.staffRec));
+  set('r-elig-rec',   fmt(d.eligRec));
   setW('cb1', 100);
   setW('cb2', (d.totalRec / Math.max(d.totalLeak, 1)) * 100);
   setW('cb3', (d.residual / Math.max(d.totalLeak, 1)) * 100);
@@ -1502,41 +1495,34 @@ function renderResults(d) {
   set('cv2', fmt(d.totalRec));
   set('cv3', fmt(d.residual));
 
-  // Pricing
+  // Pricing — new model: their CTC$ vs our fee (max of $30K floor or 2.5% of collections)
   set('r-their-total', fmt(d.theirTotal));
-  set('r-our-total',   fmt(d.ourTotal));
+  set('r-their-sub',   'based on your stated CTC of ' + (d.ctcCurrent * 100).toFixed(1) + '%');
+  set('r-our-total',   fmt(d.ourFee + d.sfLicenseAnnual + d.residualStaffAnnual));
   set('r-cost-saving', fmt(d.costSaving));
 
-  // Dynamic row labels + values based on billing model
-  if (d.billingModel === 'outsourced') {
-    set('r-them-head', 'Current (outsourced)');
-    set('r-row1-label', 'Outsourced billing fee (' + (d.outsourceFeePct * 100).toFixed(1) + '% of collections)');
-    set('r-row2-label', 'eCloudsHealth platform + per-claim');
-    set('r-row3-label', 'Internal reconciliation staff cost');
-    set('r-t-plat',  fmt(d.theirOutsourceFee));
-    set('r-u-plat',  fmt(d.ourPlat + d.ourPC));
-    set('r-t-pc',    '—');
-    set('r-u-pc',    '—');
-    set('r-t-staff', fmt(d.theirStaff));
-    set('r-u-staff', fmt(d.ourStaff));
+  // Pricing model explanation (adaptive: floor vs % of collections)
+  if (d.feeIsFloor) {
+    set('r-pricing-note',
+      'eCloudsHealth is priced at the greater of a $30,000 annual minimum (platform + claims processing) or 2.5% of net collections. At your volume the $30,000 minimum applies. Your projected cost to collect also includes Salesforce licensing and the residual internal staff needed to operate the system.');
   } else {
-    set('r-them-head', 'Current system (est.)');
-    set('r-row1-label', 'Platform / software fee (annual)');
-    set('r-row2-label', 'Per-claim processing cost (annual)');
-    set('r-row3-label', 'Billing staff cost (annual)');
-    set('r-t-plat',  fmt(d.theirPlat));
-    set('r-u-plat',  fmt(d.ourPlat));
-    set('r-t-pc',    fmt(d.theirPC));
-    set('r-u-pc',    fmt(d.ourPC));
-    set('r-t-staff', fmt(d.theirStaff));
-    set('r-u-staff', fmt(d.ourStaff));
+    set('r-pricing-note',
+      'eCloudsHealth is priced at ' + (d.targetRatePct * 100).toFixed(1) + '% of net collections, with a $30,000 annual minimum. At your volume the percentage applies — keeping your cost to collect predictable as you grow, versus 4–7% typical for outsourced billing. Your projected cost to collect also includes Salesforce licensing and the residual internal staff needed to operate the system.');
   }
-  set('r-t-total', fmt(d.theirTotal));
-  set('r-u-total', fmt(d.ourTotal));
+
+  // Comparison table
+  set('r-our-sub', d.feeIsFloor ? '$30K minimum + SF licensing + residual staff' : '2.5% of collections + SF licensing + residual staff');
+  set('r-t-total',  '—');
+  set('r-u-fee',    fmt(d.ourFee));
+  set('r-u-sf',     fmt(d.sfLicenseAnnual));
+  set('r-u-resid',  fmt(d.residualStaffAnnual));
+  set('r-t-allin',  fmt(d.theirTotal));
+  set('r-u-total',  fmt(d.ourFee + d.sfLicenseAnnual + d.residualStaffAnnual));
   set('r-sf-users',  Math.round(d.sfUsers));
   set('r-sf-annual', fmt(d.sfLicenseAnnual));
+
   set('r-combined', fmt(d.combined));
-  set('r-combined-cost', fmt(d.ctcSaving));
+  set('r-combined-cost', fmt(d.costSaving));
   set('r-combined-rec',  fmt(d.ncrGain));
   set('r-ccr-loss', fmt(d.ccrReworkAvoided));
   set('r-ncr-loss', fmt(d.ncrGain));
@@ -1570,24 +1556,22 @@ function refreshRecovery() {
   const d = compute();
   set('r-total-rec',  fmt(d.totalRec));
   set('r-denial-rec', fmt(d.denialRec));
-  set('r-staff-rec',  fmt(d.staffRec));
+  set('r-elig-rec',   fmt(d.eligRec));
   setW('cb2', (d.totalRec / Math.max(d.totalLeak, 1)) * 100);
   setW('cb3', (d.residual / Math.max(d.totalLeak, 1)) * 100);
   set('cv2', fmt(d.totalRec));
   set('cv3', fmt(d.residual));
   set('r-combined', fmt(d.combined));
-  set('r-combined-cost', fmt(d.ctcSaving));
+  set('r-combined-cost', fmt(d.costSaving));
   set('r-combined-rec',  fmt(d.ncrGain));
   // Hero box
   set('h-netsf',    fmt(d.combinedNetSF));
-  set('h-combined', fmt(d.combined));
-  set('h-sflic',    fmt(d.sfLicenseAnnual));
   set('h-year1',    fmt(d.year1Net));
   set('h-recurring', fmt(d.recurringNet));
   set('h-roi-y1',   Math.round(d.roiYear1) + '%');
   set('h-roi-rec',  Math.round(d.roiRecurring) + '%');
   set('h-payback',  d.paybackMonths > 0 ? d.paybackMonths.toFixed(1) + ' mo' : '—');
-  set('h-bd-cost',  fmt(d.ctcSaving));
+  set('h-bd-cost',  fmt(d.costSaving));
   set('h-bd-ncr',   fmt(d.ncrGain));
   set('h-bd-ccr',   fmt(d.ccrReworkAvoided));
   set('h-bd-wc',    fmt(d.workingCapitalReleased));
@@ -1599,13 +1583,10 @@ function selectComplexity(btn) {
   btn.classList.add('selected');
 }
 
-/* ── Billing model selector ── */
+/* ── Billing model selector (qualifying data point only) ── */
 function selectBilling(btn) {
   document.querySelectorAll('.billing-opt').forEach(o => o.classList.remove('selected'));
   btn.classList.add('selected');
-  const model = btn.dataset.model;
-  document.getElementById('inhouse-fields').style.display    = (model === 'inhouse')    ? '' : 'none';
-  document.getElementById('outsourced-fields').style.display = (model === 'outsourced') ? '' : 'none';
 }
 
 /* ── Step 2 → 3 ── */
@@ -1650,9 +1631,13 @@ function goStep3() {
     recRate:       parseFloat(document.getElementById('recovery_rate').value) || 70,
     totalRec:      Math.round(d.totalRec),
     denialRec:     Math.round(d.denialRec),
-    staffRec:      Math.round(d.staffRec),
+    eligRec:       Math.round(d.eligRec),
+    residualHrs:   Math.round(d.residualHrs),
+    residualStaffAnnual: Math.round(d.residualStaffAnnual),
     theirTotal:    Math.round(d.theirTotal),
-    ourTotal:      Math.round(d.ourTotal),
+    ourTotal:      Math.round(d.ourFee),
+    ourFee:        Math.round(d.ourFee),
+    pricingModel:  d.feeIsFloor ? '$30K floor' : '2.5% of collections',
     sfLicenseAnnual: Math.round(d.sfLicenseAnnual),
     costSaving:    Math.round(d.costSaving),
     ccr:           Math.round(d.ccr * 100) + '%',
@@ -1680,6 +1665,10 @@ function goStep3() {
     body: JSON.stringify(payload)
   }).catch(() => {}); // silent fail — don't interrupt the user experience
 }
+/* ── Reset & start over ── */
+function resetCalculator() {
+  window.location.reload();
+}
 /* ── PDF Download via Print ── */
 function downloadPDF() {
   const btn = document.getElementById('pdf-btn');
@@ -1696,6 +1685,7 @@ function downloadPDF() {
 
 /* ── Set copyright year ── */
 document.getElementById('year').textContent = new Date().getFullYear();
+autoScaleResidual();
 </script>
 </body>
 </html>
