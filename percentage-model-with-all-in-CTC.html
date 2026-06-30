@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eCloudsHealth · Revenue Leakage Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f5f7fa;
+  --blue:     #1a6fd4;
+  --blue-lt:  #1558b0;
+  --red:      #c81f1f;
+  --red-lt:   #b91c1c;
+  --green:    #16a34a;
+  --green-lt: #15803d;
+  --amber:    #b45309;
+  --white:    #111827;
+  --muted:    #6b7280;
+  --card-bg:  #ffffff;
+  --card-bd:  #dde3ee;
+  --inp-bg:   #f8fafc;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+}
+
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(26,111,212,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,111,212,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+
+.wrapper {
+  position: relative; z-index: 1;
+  max-width: 920px; margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+/* ── Steps ── */
+.step { display: none; }
+.step.active { display: block; }
+
+/* ── Logo ── */
+.logo-line { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.logo-img  { height: 44px; width: auto; display: block; }
+.logo-text { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; border-left: 1px solid #dde3ee; padding-left: 12px; line-height: 1.4; }
+
+/* ── Progress ── */
+.progress-wrap { display: flex; align-items: center; gap: 0; margin-bottom: 40px; }
+.prog-step { display: flex; align-items: center; gap: 10px; }
+.prog-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--card-bd);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  transition: all .3s; flex-shrink: 0;
+}
+.prog-dot.active { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 0 12px rgba(26,111,212,.3); }
+.prog-dot.done   { background: var(--blue); border-color: var(--blue); color: #fff; }
+.prog-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.prog-label.active { color: var(--white); font-weight: 500; }
+.prog-line { flex: 1; height: 1px; background: var(--card-bd); margin: 0 16px; }
+
+/* ── Typography ── */
+h1 { font-family: 'DM Sans', sans-serif; font-size: clamp(26px, 5vw, 44px); line-height: 1.1; margin-bottom: 12px; font-weight: 700; letter-spacing: -0.01em; }
+h1 em { font-style: italic; color: var(--blue); }
+h2 { font-family: 'DM Sans', sans-serif; font-size: 26px; line-height: 1.2; margin-bottom: 10px; font-weight: 700; letter-spacing: -0.01em; }
+.subtitle { font-size: 15px; color: var(--muted); font-weight: 300; line-height: 1.6; max-width: 580px; margin-bottom: 36px; }
+
+.section-label {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  letter-spacing: .12em; text-transform: uppercase;
+  margin-bottom: 14px; font-weight: 500;
+}
+.lbl-blue  { color: var(--blue); }
+.lbl-red   { color: var(--red); }
+.lbl-green { color: var(--green); }
+.lbl-amber { color: var(--amber); }
+
+/* ── Grid / Cards ── */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media(max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--card-bg); border: 1px solid var(--card-bd);
+  border-radius: 12px; padding: 22px; transition: border-color .2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.card:focus-within { border-color: var(--blue); }
+
+.card-label {
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--blue); margin-bottom: 6px; font-weight: 500;
+}
+.card-title { font-size: 15px; font-weight: 600; color: #1a2035; margin-bottom: 14px; line-height: 1.4; }
+
+/* ── Inputs ── */
+.input-wrap { position: relative; }
+.prefix {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  font-family: 'DM Mono', monospace; font-size: 15px; color: var(--blue); pointer-events: none;
+}
+.suffix {
+  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+  font-family: 'DM Mono', monospace; font-size: 13px; color: #9ca3af; pointer-events: none;
+}
+
+input[type="number"] {
+  width: 100%; background: var(--inp-bg);
+  border: 1px solid var(--card-bd); border-radius: 8px;
+  color: #111827; font-family: 'DM Mono', monospace;
+  font-size: 22px; font-weight: 600;
+  padding: 11px 14px 11px 30px;
+  outline: none; transition: border-color .2s; -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type="number"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,111,212,.1); }
+input[type="number"].no-prefix { padding-left: 14px; }
+
+input[type="text"], input[type="email"], input[type="tel"] {
+  width: 100%; background: var(--inp-bg);
+  border: 1px solid var(--card-bd); border-radius: 8px;
+  color: #111827; font-family: 'DM Mono', monospace;
+  font-size: 16px; font-weight: 500;
+  padding: 13px 16px;
+  outline: none; transition: border-color .2s;
+}
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,111,212,.1); }
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="tel"]::placeholder { color: #c4cad6; font-weight: 400; }
+
+/* ── Sliders ── */
+.slider-row { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+
+input.slider-blue {
+  -webkit-appearance: none; appearance: none;
+  flex: 1; height: 4px; border-radius: 2px; background: #dde3ee;
+  border: none; outline: none; cursor: pointer;
+}
+input.slider-blue::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--blue); box-shadow: 0 0 0 3px rgba(26,111,212,.2); cursor: pointer;
+}
+input.slider-green {
+  -webkit-appearance: none; appearance: none;
+  flex: 1; height: 4px; border-radius: 2px; background: #bbf7d0;
+  border: none; outline: none; cursor: pointer;
+}
+input.slider-green::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,.2); cursor: pointer;
+}
+.sv-blue  { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 600; color: var(--blue); min-width: 52px; text-align: right; }
+.sv-green { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 600; color: var(--green); min-width: 52px; text-align: right; }
+.hint { font-size: 11px; color: #9ca3af; font-family: 'DM Mono', monospace; margin-top: 7px; }
+
+/* ── Buttons ── */
+.btn-primary {
+  background: var(--blue); color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+  padding: 14px 36px; border-radius: 10px; border: none; cursor: pointer;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  display: inline-flex; align-items: center; gap: 8px;
+  box-shadow: 0 2px 8px rgba(26,111,212,.3);
+}
+.btn-primary:hover { background: #1558b0; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(26,111,212,.35); }
+
+.btn-ghost {
+  background: transparent; color: var(--muted);
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  padding: 13px 24px; border-radius: 10px;
+  border: 1px solid var(--card-bd); cursor: pointer; transition: all .2s;
+}
+.btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+.btn-row { display: flex; align-items: center; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+
+/* ── Contact form ── */
+.contact-hero {
+  background: var(--card-bg); border: 1px solid var(--card-bd);
+  border-radius: 16px; padding: 32px; margin-bottom: 28px;
+  display: flex; align-items: flex-start; gap: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.contact-hero-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(26,111,212,.08); border: 1px solid rgba(26,111,212,.2);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.contact-hero-icon svg { width: 22px; height: 22px; }
+
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width: 600px) { .contact-grid { grid-template-columns: 1fr; } }
+
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field-label {
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--blue); font-weight: 500;
+}
+.field-required { color: var(--red); margin-left: 2px; }
+.field-error {
+  font-size: 12px; color: var(--red);
+  font-family: 'DM Mono', monospace; display: none; margin-top: 2px;
+}
+input.invalid { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(200,31,31,.1) !important; }
+
+/* ── Results: monochrome report cards ── */
+.panel {
+  border-radius: 10px; padding: 0; margin-bottom: 16px;
+  background: #fff; border: 1px solid #d9dde5; overflow: hidden;
+}
+.panel-red, .panel-green, .panel-amber { background: #fff; border: 1px solid #d9dde5; }
+
+.panel-head {
+  padding: 14px 28px; border-bottom: 1px solid #e8ebf0;
+  background: #f7f8fa;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  letter-spacing: .02em; color: #1a2333; text-transform: none;
+}
+.panel-body { padding: 28px; }
+
+.metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 0; }
+@media(max-width: 600px) { .metrics-row { grid-template-columns: 1fr; gap: 18px; } }
+
+.metric { border-left: 2px solid #e5e7eb; padding-left: 16px; }
+.hl-red, .hl-green, .hl-amber { border-left-color: #c4cad6; }
+.hl-blue  { border-left-color: var(--blue); }
+
+.m-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; line-height: 1.4; font-weight: 500; }
+.m-sub   { font-size: 11px; color: #9ca3af; margin-top: 5px; }
+
+.mv { font-family: 'DM Sans', sans-serif; font-weight: 700; line-height: 1; transition: all .3s; color: #111827; }
+.mv-lg { font-size: 30px; } .mv-sm { font-size: 24px; }
+.mv-red, .mv-green, .mv-amber { color: #111827; }
+.mv-blue  { color: var(--blue); }
+
+.inner-div { border-top: 1px solid #eceef2; padding-top: 22px; margin-top: 24px; }
+
+/* ── Bar rows (greyscale + single blue accent) ── */
+.bar-rows { display: flex; flex-direction: column; gap: 12px; }
+.brow { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.brow-label { color: #4b5563; flex: 1; }
+.brow-track { width: 160px; height: 6px; background: #eceef2; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.brow-fill  { height: 100%; border-radius: 3px; transition: width .5s ease; background: #9ca3af; }
+.brow-fill.accent { background: var(--blue); }
+.brow-val   { font-family: 'DM Sans', sans-serif; font-size: 13px; color: #111827; min-width: 80px; text-align: right; font-weight: 600; }
+
+/* ── Pricing table ── */
+.compare-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.compare-table th {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted); text-align: left;
+  padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-weight: 600;
+}
+.compare-table td {
+  font-size: 13px; padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6; vertical-align: middle;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+.col-label { color: #4b5563; }
+.col-them  { color: #111827; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+.col-us    { color: var(--blue); font-family: 'DM Sans', sans-serif; font-weight: 600; }
+.total-row td { border-top: 2px solid #e5e7eb !important; padding-top: 14px !important; font-weight: 700; }
+
+.savings-callout {
+  background: #f7f8fa; border: 1px solid #e0e3ea;
+  border-radius: 8px; padding: 18px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; margin-top: 22px;
+}
+.sc-label { font-size: 13px; color: #4b5563; max-width: 320px; line-height: 1.4; font-weight: 500; }
+.sc-value { font-family: 'DM Sans', sans-serif; font-size: 28px; font-weight: 700; color: var(--blue); }
+
+/* ── Hero summary box (top of report) ── */
+.hero-box {
+  background: #0f1b2d; border: 1px solid #0f1b2d; border-radius: 12px;
+  padding: 32px; margin-bottom: 24px; color: #fff;
+}
+.hero-eyebrow { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #8aa6cc; margin-bottom: 14px; font-weight: 600; }
+.hero-main { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+.hero-primary { }
+.hero-primary .hero-label { font-size: 13px; color: #b8c4d6; margin-bottom: 8px; }
+.hero-primary .hero-value { font-family: 'DM Sans', sans-serif; font-size: 52px; font-weight: 700; line-height: 1; color: #fff; }
+.hero-primary .hero-value .accent { color: #5b9bf0; }
+.hero-primary .hero-sublabel { font-size: 12px; color: #8aa6cc; margin-top: 10px; }
+.hero-primary .hero-sublabel span { color: #c4d4e8; font-weight: 600; }
+.hero-secondary { display: flex; gap: 28px; flex-wrap: wrap; }
+.hero-stat { }
+.hero-stat .hs-label { font-size: 11px; color: #8aa6cc; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.hero-stat .hs-value { font-family: 'DM Sans', sans-serif; font-size: 24px; font-weight: 700; color: #fff; }
+.hero-stat .hs-roi { font-size: 11px; color: #8aa6cc; margin-top: 4px; }
+.hero-stat .hs-roi span { color: #5b9bf0; font-weight: 700; }
+.hero-breakdown {
+  display: flex; gap: 28px; flex-wrap: wrap;
+  border-top: 1px solid #1f3048; margin-top: 24px; padding-top: 20px;
+}
+.hb-item { display: flex; flex-direction: column; gap: 4px; }
+.hb-item .hb-label { font-size: 11px; color: #8aa6cc; }
+.hb-item .hb-value { font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; color: #e5edf7; }
+.hb-context { opacity: 0.6; }
+.hb-tag { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: #5b9bf0; border: 1px solid #2a456b; border-radius: 3px; padding: 1px 5px; margin-left: 6px; vertical-align: middle; }
+
+/* ── Hero KPI targets strip ── */
+.hero-targets { border-top: 1px solid #1f3048; margin-top: 20px; padding-top: 18px; }
+.ht-title { font-size: 11px; color: #8aa6cc; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; font-weight: 600; }
+.ht-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media(max-width: 600px) { .ht-row { grid-template-columns: 1fr 1fr; gap: 16px; } }
+.ht-item { display: flex; flex-direction: column; gap: 5px; }
+.ht-label { font-size: 11px; color: #8aa6cc; }
+.ht-val { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; color: #e5edf7; }
+.ht-arrow { color: #5b9bf0; margin: 0 2px; }
+.ht-target { color: #5b9bf0; }
+
+/* ── Section heading above each card ── */
+.report-section-label {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: .06em;
+  text-transform: uppercase; color: #9ca3af; margin-bottom: 10px; font-weight: 600;
+}
+
+/* ── Billing model toggle ── */
+.field-hint-line { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; max-width: 640px; }
+.billing-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+@media(max-width: 600px) { .billing-toggle { grid-template-columns: 1fr; } }
+.billing-opt {
+  display: flex; flex-direction: column; gap: 4px; text-align: left;
+  background: #fff; border: 1.5px solid var(--card-bd); border-radius: 12px;
+  padding: 18px 20px; cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif;
+}
+.billing-opt:hover { border-color: #b4c4dd; }
+.billing-opt.selected { border-color: var(--blue); background: #f5f9ff; }
+.bt-name { font-size: 15px; font-weight: 600; color: #1a2333; }
+.bt-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+/* ── Complexity selector ── */
+.complexity-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media(max-width: 600px) { .complexity-selector { grid-template-columns: 1fr; } }
+.complexity-opt {
+  display: flex; flex-direction: column; gap: 4px; text-align: left;
+  background: #fff; border: 1.5px solid var(--card-bd); border-radius: 12px;
+  padding: 18px 20px; cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif;
+}
+.complexity-opt:hover { border-color: #b4c4dd; }
+.complexity-opt.selected { border-color: var(--blue); background: #f5f9ff; }
+.cx-name { font-size: 15px; font-weight: 600; color: #1a2333; }
+.cx-desc { font-size: 11px; color: var(--muted); line-height: 1.4; min-height: 28px; }
+.cx-cost { font-family: 'DM Sans', sans-serif; font-size: 20px; font-weight: 700; color: #111827; margin-top: 4px; }
+.complexity-opt.selected .cx-cost { color: var(--blue); }
+
+.note-box {
+  font-size: 12px; color: #6b7280; line-height: 1.6;
+  margin-bottom: 14px; padding: 12px 16px;
+  background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px;
+}
+
+/* ── Landing hero ── */
+.landing-hero {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 28px; margin-bottom: 28px;
+}
+.landing-eyebrow {
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--blue); font-weight: 600; margin-bottom: 14px;
+}
+.landing-hero h1 {
+  font-size: clamp(28px, 5vw, 46px); line-height: 1.08;
+  margin-bottom: 16px; color: #111827; letter-spacing: -0.01em;
+}
+.landing-hero h1 em { font-style: italic; color: var(--blue); }
+.landing-hero .subtitle { margin-bottom: 24px; max-width: 620px; }
+.trust-row { display: flex; flex-wrap: wrap; gap: 20px; }
+.trust-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: #4b5563; font-weight: 500;
+}
+.trust-item svg { color: var(--blue); flex-shrink: 0; }
+
+/* ── Results header ── */
+.results-header { margin-bottom: 24px; }
+.results-header .eyebrow {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: .08em;
+  text-transform: uppercase; color: #9ca3af; margin-bottom: 10px; font-weight: 600;
+}
+.results-header h1 { margin-bottom: 6px; color: #111827; }
+.results-header h1 em { font-style: normal; color: #111827; }
+.results-header .company-line { font-size: 14px; color: var(--muted); }
+
+.note {
+  font-size: 11px; color: #9ca3af; font-family: 'DM Mono', monospace;
+  line-height: 1.8; border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 8px;
+}
+
+.consent-line {
+  font-size: 11px; color: #9ca3af; line-height: 1.6;
+  margin-top: 16px; max-width: 620px;
+}
+
+.disclaimer {
+  border: 1px solid #e5e7eb; border-radius: 12px;
+  background: #fafbfc; padding: 24px 28px; margin-top: 24px;
+}
+.disclaimer-title {
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: #6b7280; font-weight: 600; margin-bottom: 14px;
+}
+.disclaimer p {
+  font-size: 11px; color: #9ca3af; line-height: 1.7; margin-bottom: 12px;
+}
+.disclaimer p strong { color: #6b7280; font-weight: 600; }
+.disclaimer-footer {
+  font-family: 'DM Mono', monospace; font-size: 10px; color: #c4cad6;
+  border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 6px;
+}
+.pdf-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+  background: #f0f6ff; border: 1px solid #bfdbfe;
+  border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;
+}
+.pdf-bar-text { display: flex; flex-direction: column; gap: 3px; }
+.pdf-bar-text strong { font-size: 14px; color: #1e3a5f; font-weight: 600; }
+.pdf-bar-text span   { font-size: 13px; color: var(--muted); }
+
+.btn-pdf {
+  background: #fff; color: var(--blue);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+  padding: 11px 22px; border-radius: 8px;
+  border: 1.5px solid var(--blue); cursor: pointer;
+  transition: all .2s; display: inline-flex; align-items: center; gap: 8px;
+  white-space: nowrap;
+}
+.btn-pdf:hover { background: var(--blue); color: #fff; }
+.btn-pdf:disabled { opacity: .6; cursor: not-allowed; }
+.btn-reset { color: var(--muted); border-color: #d9dde5; }
+.btn-reset:hover { background: #4b5563; color: #fff; border-color: #4b5563; }
+
+@media print {
+  /* Hide everything except step 3 results */
+  #step1, #step2 { display: none !important; }
+  #step3 { display: block !important; }
+  .progress-wrap, .btn-row, .pdf-bar { display: none !important; }
+
+  body {
+    background: #fff !important;
+    color: #111 !important;
+    font-size: 11pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .wrapper { padding: 0 !important; max-width: 100% !important; }
+  body::before { display: none !important; }
+
+  /* Panels — clean monochrome cards */
+  .panel { border-radius: 8px !important; margin-bottom: 12px !important; page-break-inside: avoid; border: 1px solid #d9dde5 !important; background: #fff !important; }
+  .panel-head { padding: 10px 18px !important; background: #f7f8fa !important; font-size: 11pt !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .panel-body { padding: 18px !important; }
+
+  /* Metrics */
+  .metrics-row { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 12px !important; margin-bottom: 0 !important; }
+  .mv-lg { font-size: 20pt !important; }
+  .mv-sm { font-size: 16pt !important; }
+  .mv, .mv-red, .mv-green, .mv-amber { color: #111827 !important; }
+  .mv-blue { color: #1a6fd4 !important; }
+
+  /* Bars */
+  .brow-track { background: #eceef2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .brow-fill  { background: #9ca3af !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .brow-fill.accent { background: #1a6fd4 !important; }
+
+  /* Table */
+  .compare-table th, .compare-table td { padding: 6px 8px !important; font-size: 9pt !important; }
+  .col-them { color: #111827 !important; }
+  .col-us   { color: #1a6fd4 !important; }
+
+  /* Savings callout */
+  .savings-callout { background: #f7f8fa !important; border: 1px solid #e0e3ea !important; page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .sc-value { color: #1a6fd4 !important; font-size: 18pt !important; }
+
+  /* Hero box */
+  .hero-box { background: #0f1b2d !important; border: 1px solid #0f1b2d !important; page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .hero-value, .hs-value, .hb-value { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* note-box */
+  .note-box { background: #f7f8fa !important; border: 1px solid #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Logo */
+  .logo-line { margin-bottom: 16px !important; }
+  .logo-img  { height: 36px !important; }
+
+  /* Results header */
+  .results-header { margin-bottom: 16px !important; }
+  .results-header h1 { font-size: 22pt !important; }
+
+  /* Inner dividers */
+  .inner-div { padding-top: 12px !important; margin-top: 16px !important; }
+
+  /* Disclaimer */
+  .disclaimer { font-size: 7pt !important; margin-top: 12px !important; padding: 12px 14px !important; page-break-inside: avoid; }
+  .disclaimer p { font-size: 7pt !important; margin-bottom: 6px !important; }
+  .disclaimer-title { font-size: 7pt !important; }
+
+  /* Slider — hide */
+  input[type="range"] { display: none !important; }
+
+  /* Page breaks */
+  h1, h2 { page-break-after: avoid; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- ══════════════════════════════════════
+     STEP 1 — PRACTICE DATA
+══════════════════════════════════════ -->
+<div class="step active" id="step1">
+
+  <div class="logo-line">
+    <img src="data:image/png;base64,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" alt="eCloudsHealth" class="logo-img">
+    <span class="logo-text">Revenue Leakage<br>Calculator</span>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="prog-step">
+      <div class="prog-dot active" id="pd1">1</div>
+      <span class="prog-label active">Practice data</span>
+    </div>
+    <div class="prog-line"></div>
+    <div class="prog-step">
+      <div class="prog-dot" id="pd2">2</div>
+      <span class="prog-label" id="pl2">Your details</span>
+    </div>
+    <div class="prog-line"></div>
+    <div class="prog-step">
+      <div class="prog-dot" id="pd3">3</div>
+      <span class="prog-label" id="pl3">Your results</span>
+    </div>
+  </div>
+
+  <div class="landing-hero">
+    <div class="landing-eyebrow">Revenue Cycle ROI Analysis</div>
+    <h1>See exactly what your practice is<br><em>leaving on the table.</em></h1>
+    <p class="subtitle">A 2-minute analysis of your revenue cycle. Enter your practice numbers to quantify revenue leakage, benchmark your KPIs against HFMA standards, and see the financial impact eCloudsHealth can deliver.</p>
+    <div class="trust-row">
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4.5L6 12l-3.5-3.5"/></svg>
+        Built on Salesforce Health Cloud
+      </div>
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4.5L6 12l-3.5-3.5"/></svg>
+        HFMA &amp; MGMA benchmark-aligned
+      </div>
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4.5L6 12l-3.5-3.5"/></svg>
+        Takes under 2 minutes
+      </div>
+    </div>
+  </div>
+
+  <div class="report-section-label" style="margin-top:8px">Step 1 · Practice volume</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-label">Monthly claims volume</div>
+      <div class="card-title">Claims submitted per month</div>
+      <div class="input-wrap">
+        <span class="prefix">#</span>
+        <input type="number" id="claims" value="500" min="1" oninput="autoScaleResidual()">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Average claim value</div>
+      <div class="card-title">Avg dollar value per claim</div>
+      <div class="input-wrap">
+        <span class="prefix">$</span>
+        <input type="number" id="avg_claim" value="280" min="1">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Number of providers</div>
+      <div class="card-title">Physicians / billing providers</div>
+      <div class="input-wrap">
+        <input type="number" id="providers" value="15" min="1" class="no-prefix">
+        <span class="suffix">providers</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Expected Salesforce users</div>
+      <div class="card-title">Staff needing a Health Cloud license</div>
+      <div class="input-wrap">
+        <input type="number" id="sf_users" value="20" min="1" class="no-prefix">
+        <span class="suffix">users</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Denial rate</div>
+      <div class="card-title">% of claims denied by payers</div>
+      <div class="slider-row">
+        <input type="range" id="denial_rate" class="slider-blue" min="1" max="35" value="12"
+          oninput="setSV('denial_val', this.value, '%')">
+        <span class="sv-blue" id="denial_val">12%</span>
+      </div>
+      <div class="hint">Industry avg: 8–15%</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Unworked denials</div>
+      <div class="card-title">% of denials never reworked</div>
+      <div class="slider-row">
+        <input type="range" id="rework_rate" class="slider-blue" min="5" max="60" value="30"
+          oninput="setSV('rework_val', this.value, '%')">
+        <span class="sv-blue" id="rework_val">30%</span>
+      </div>
+      <div class="hint">Industry avg: 25–40%</div>
+    </div>
+
+  </div>
+
+  <div class="report-section-label" style="margin-top:8px">Step 2 · Clinical &amp; financial KPIs</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-label">Clean Claim Rate (CCR)</div>
+      <div class="card-title">% of claims accepted on first submission</div>
+      <div class="slider-row">
+        <input type="range" id="ccr" class="slider-blue" min="50" max="99" value="82"
+          oninput="setSV('ccr_val', this.value, '%')">
+        <span class="sv-blue" id="ccr_val">82%</span>
+      </div>
+      <div class="hint">Best practice: 95%+</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Net Collection Rate (NCR)</div>
+      <div class="card-title">% of collectible revenue actually collected</div>
+      <div class="slider-row">
+        <input type="range" id="ncr" class="slider-blue" min="50" max="99" value="88"
+          oninput="setSV('ncr_val', this.value, '%')">
+        <span class="sv-blue" id="ncr_val">88%</span>
+      </div>
+      <div class="hint">Best practice: 95–98%</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Average Days in A/R</div>
+      <div class="card-title">Avg days to receive payment on a claim</div>
+      <div class="slider-row">
+        <input type="range" id="days_ar" class="slider-blue" min="20" max="120" value="55"
+          oninput="setSV('days_ar_val', this.value, ' days')">
+        <span class="sv-blue" id="days_ar_val">55 days</span>
+      </div>
+      <div class="hint">Best practice: under 30 days</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Cost to Collect (CTC)</div>
+      <div class="card-title">% of collections spent on billing operations</div>
+      <div class="slider-row">
+        <input type="range" id="ctc" class="slider-blue" min="2" max="15" value="10" step="0.5"
+          oninput="setSV('ctc_val', this.value, '%'); ctcEdited=true">
+        <span class="sv-blue" id="ctc_val">10%</span>
+      </div>
+      <div class="hint">Include all billing costs — staff salaries, software, clearinghouse &amp; outsourced fees. Auto-scales with practice size; adjust if needed.</div>
+    </div>
+
+  </div>
+
+  <div class="report-section-label" style="margin-top:8px">Step 3 · Your billing operation</div>
+  <p class="field-hint-line">How is your billing handled today? (Helps us understand your setup — your Cost to Collect above already reflects your current total cost.)</p>
+  <div class="billing-toggle">
+    <button type="button" class="billing-opt selected" data-model="inhouse" onclick="selectBilling(this)">
+      <span class="bt-name">In-house billing</span>
+      <span class="bt-desc">Your own staff handle billing &amp; collections</span>
+    </button>
+    <button type="button" class="billing-opt" data-model="outsourced" onclick="selectBilling(this)">
+      <span class="bt-name">Outsourced billing</span>
+      <span class="bt-desc">A third-party biller charges a % of collections</span>
+    </button>
+  </div>
+
+  <div class="report-section-label" style="margin-top:20px">Residual team to operate eCloudsHealth</div>
+  <p class="field-hint-line">Even with automation, a small internal team still operates the system (oversight, exceptions, posting). We include this in your projected Cost to Collect so the comparison is honest.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="card-label">Residual team hours</div>
+      <div class="card-title">Total staff hours/week to operate the system</div>
+      <div class="input-wrap">
+        <input type="number" id="residual_hrs" value="5" min="0" class="no-prefix" oninput="residualEdited=true">
+        <span class="suffix">hrs/wk</span>
+      </div>
+      <div class="hint">Auto-scales with your claim volume — adjust if needed</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Fully loaded hourly cost</div>
+      <div class="card-title">Average loaded cost per staff hour</div>
+      <div class="input-wrap">
+        <span class="prefix">$</span>
+        <input type="number" id="residual_cost" value="35" min="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="report-section-label" style="margin-top:8px">Step 4 · Implementation scope</div>
+  <div class="complexity-selector">
+    <button type="button" class="complexity-opt" data-cost="40000" onclick="selectComplexity(this)">
+      <span class="cx-name">Standard</span>
+      <span class="cx-desc">Single entity, standard integrations</span>
+      <span class="cx-cost">$40,000</span>
+    </button>
+    <button type="button" class="complexity-opt selected" data-cost="70000" onclick="selectComplexity(this)">
+      <span class="cx-name">Moderate</span>
+      <span class="cx-desc">Multiple workflows, several integrations</span>
+      <span class="cx-cost">$70,000</span>
+    </button>
+    <button type="button" class="complexity-opt" data-cost="100000" onclick="selectComplexity(this)">
+      <span class="cx-name">Complex</span>
+      <span class="cx-desc">Multi-entity, extensive custom integrations</span>
+      <span class="cx-cost">$100,000</span>
+    </button>
+  </div>
+  <div class="hint" style="margin-top:10px">One-time setup &amp; implementation fee. Affects Year 1 net benefit and payback period only.</div>
+
+  <div class="btn-row">
+    <button class="btn-primary" onclick="goStep2()">
+      See my leakage estimate
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     STEP 2 — CONTACT DETAILS
+══════════════════════════════════════ -->
+<div class="step" id="step2">
+
+  <div class="logo-line">
+    <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAEQAYwDASIAAhEBAxEB/8QAHQABAAIDAQEBAQAAAAAAAAAAAAQHBQYIAwIBCf/EAFUQAAEDAwIDBQQGBQUKDAcAAAEAAgMEBREGBxIhMQgTQVFhFHGBkRUiI6Gx0TJCUmLBFjM3lLIXJCdDU1RydIKEJSY0REZWY3OSk6LwNlV1s9Lh8f/EABwBAQACAwEBAQAAAAAAAAAAAAADBAECBQYHCP/EADkRAAICAgAEAwQIBQMFAAAAAAABAgMEEQUSITETQVEGYXGRFCKBobHB0eEWMkJS8BUjQzNTYnLx/9oADAMBAAIRAxEAPwDstERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEX45zWjLiAPMla1qHX2j7C8x3W/0NPIP1DKOL5LeFcpvUVs1lOMVuT0bMip649onQNNKWQGvqgDjijgOD7lFi7SehXPAkprpG0/rGAlWlw7Ka34bIvpVL/qRdaKvbHvPtxdms7rUlNTvfyEdQeB2fcVvdFW0ldA2ejqYp43DLXRuBBCrWU2VvU4tEsZxl2Z7oiKM2CIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAtI3L3LsGiKcx1UvtNxcMx0cRy8+p8h71id7dyo9HUQttt4JrxUMPCM5EAPRzv4BcqXKpq7hWy1tdPJUVMruKSR5yXFd3hnCHkLxbekfx/Y4XE+MLHfhVdZfh+5tW4G6+sNVvfC6ufbqAnLaamcWcv3nDmVXToxxueRlzjkuPUqe9uQo8jea9XVTXTHlgtI8/9Inc+ab2yHI1R5GqdI1R5GqQtVTIE0bXAhzQQsrpTVepNI1YqNO3apoSDkxtee7d729CoEgUeRqitrU46ktnQqm11R1JtH2jqK6TQ2jXDYbfVvIYytbyhkP737P3BdCxSRzRNlie17HDLXNOQQv5mzMDgQRlXR2dt6KvSNwp9N6jmfPYZncEcziS6kceh9W+HovMZ/Ckk50/L9DrUZG+kjsxF5008NVTx1FPIyWKRocx7TkOB6EL0Xny6ERV7uVu1prRNR7DUd/XXDGTT0wBLB+8SQB+K0nOMFuT0WcXEvy7FVRFyl7iwkVV6A3v0zqi6Mtc8FTa6qQ4i9oA4HnyDgTg+/C3zVupLPpa0SXS81bYIG9PFzz5AeJWIXQnHmT6EuRwzLxrlRZW1J9l6/D1MwipCk7R2m5bg2Gey3SGmc7HfFrDgeZAdnCuGxXa3Xy1w3K11TKmlmGWPb+B8isV3V2fyvZtm8JzMFJ5FbimTkRFKc8IiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAi855ooIzJNIyNgGSXHAC1q5bg6Ot7iyov1HxDq1sgJUkKp2fyJsityKqv+pJL4s2la9uHqan0ppaqu02HPa3hhZnHG89AsXDunoWV3CL9Tt/0jhUz2hNZU+o7zS261VbKi3UjOLjjdlr5HdffgAfeuhg8NtuvjGyLS8+hy+I8XooxpTrmnLstPfUrK83Ctu9znuVwmdNU1Dy+RxPj5D0WOe1SnBeT2r3SiorSPn0LXJ7k9siPavCRqlyBeDwsMu1T0yE8LxkapcjV4SBDo1zIUjVHkapsjVHkasF+qZCkao0reRW46M0LqfWVSIbBa5aiPi4XzkcMTPe5XfpHsu03CJ9WX6Z7uvcUYDG+4k5PyXLy8yijpOXX0OpRXOfVI/Ox7uW+rZJoC8Tl0sDO9t0jnZJZ+tGc+WQR7z5LphVtprb/a3QlRFVUdFRU1bCctqJpi+QHzy4nCz9VuFpSncQ65Ndj9gZXis7NxXa5Rklv1aOpGSgtSZlNZXOSzaUul0i4e9paSSVnF04g0kZ+K4Ykmr75d3yyyOqKyqkJLnHm49V1zqzW2kb1pa6Wz6QOamkkjA4cEktIGPVcwUUNspIZ7pbZZmyUoLeCZwLuInAI5eWVyrFXl2R5ZpxXV6fXXn9x7j2X4pXhYt8q481raUXra5n0ipNdUnIxtttVRNNV4e6KWjYX/AFeocD//AFTNXazv+qoaGC8VQkioohFC1oIBx+s7zd6rImb2KF93dkRVrmZA8QAQ778FY2Gy2qapga66vEdU8NhDGguGT+ty5LW/C5IJVvr57eum/qv7Uem4fx5X5ErsuD0tKDUXLUlHVkei7pp/Yn6GHbS1BozWiJ3s4fwF/hlXj2S9Q1cd4r9NSPLqWSE1EQP6jwQDj38X3L5k07oY3ibbWmbchcoaaQCsc/7N8rWlxy3GOoX72XbFE3WdxuNNUTTR0cDoJHOjw0PLhgZx1+qVirHULISrlv1+Pnr1RV4nxn6Zw/IryqnHs4PTacW/qtvsm9Pvo6SREXVPmAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAERfhIBAzzPRAfq0XcfcS36XaaOn4au5OHKJp5R+rj4e5SN09Xs0xZuCncHXGp+rC39keLj7v4hc21sstTVSVE73SSyOLnudzJK9BwfhH0n/dt/l/H9jxftP7Tf6e/o2O/9x936fuSdWanvuo6l8l0rpZIyciEOIjaPQdFrjm46D7lPlYor248F7KuuFceWC0j5pPJtvnz2ybfvIr2g9R1XkW45AKQ4LyeFllumZ4uC8XBSHD4LycFozoVyIz2rwkClvC8JGrUv1y6ESRuQo724U14Xpa7TcLzcobba6Z9TVzu4Y42+PqfILVtRW2dChuTSRi4aaeqqY6WlhfPPK7hjjYMucfIBX/tP2feIQ3jXJGCA9lva7p/3hH4LfdptsbLt/avpi8Oinu7mZlncMthB/UZ+aav1fU3QvpKDigpM4Ls4dJ+QXgvaH2uqw48lb/V/D0XvPV4mAqo89vV+hsFy1XYdOUottmpoXmIcLYqdobGzHu5fJaJfNV366OIkrHwRH/FwnhHxx1WKLML5c1fKMvjeVmN80tL0X+dS1ZZJ/AgTRBzi931nHmSeZKjyM5LJSM5KLKxUosrSiYuePK03VWn3F7q6hbk9ZIx4+oW9zM6qHM1XaLnB7R0OD8YyeD5Kvx38U+zXo/8AOhWduZX3apo7MyQ4dNwRsceTS7AP4Lf62m2r0ffPoy4RXu5XSgeO/ngkLIzIOZABI5ArH3OzwzVLaymd7NVxuDmSN6ZHMZW1WzU0V0uEY1Noix19W9zY5K1zjxzdBxEY8vVd6jKrsW5Pr079T6d/GPD8ihWRbhFJ80E1GXM33X9yfXt131aNYpte21m8EutpaSp9gkfKTC3HecL2uaPHHirb2T3H0NJcYtI2C311HJVyPla+fB7x+OI5IJ8AVotm09ZKjtIy6efa6c2wSzj2Yj6mGscRy+C6DseiNJ2OvFfarFR0lU0FoljZhwBXVxK7XJyTXRvf5j2jzOHRphVKEtyri46fRd+Xa89dTYkRF1T50EREAREQBERAEREAREQBERAEREAREQBERAEREAREQHzI9sbHPeQGtGST4Ba5o27M1G6rvsJPsPeOgpD4Oaw4L/iRkehWA371MbDo/wBjgcW1dzcYIyOoby4jnw6rLilbp3a5tHA3ujT2/uxw8sO4MZ+ajg3Zeq1/mytbeoOT8orbKR3Huz73qyrrC5zomu7uHyDQtYkb5BZWsiLi4nmTzWPkbzxhfU8eMYVxhHsj8/59tluRO2feT2RHtUWVnL8FNe3n5rxkapzSuZjpG4Xk4cuSlSt6rweOfRYaLtU9MjPC83BSHDmvFwUbOnXM8HBeLwpLgvhkT5pmRRMc+R5DWtaOZJWr6dS/TLbPm2W2sutxht1vgdPVTvDI42+JK6n2n0BbdvLC+43N0ct0kbxTzkfzf7jP/fNR9l9u6bRlqN7vQjddZY+JznD/AJOwj9EeRx1Xrqq9SXeo4GFzKVh+oz9r1K+Z+2PtdXhVOEHvfZer/RfefQODcK8GPi2L6z+79yHqm+1N6qCCTHStP2cfn6lYFzFNcxeT2+C+G251mVY7bXts7coEJzV5OClPavF7VYrmVZxIzxleErVLeF4SBXISKrWiBK3koU7VkpWqHO1WYMhkjGTNUN7nRyNkYcOacg+RWQnaoM7equVyIWbV/dEgpaz6ci0tQ/yjLOB1wMjvrcsE8PqMq+NE6gptTadprrTjhMgxIwnmx46hcnVA5KxuzxqOSg1NJYZpT7PXtJjaT0kbz5e8Z+S9Jw7Om7FGb6MvU8QussSuk5dNLfl6I6GREXojqBERAEREAREQBERAEREAREQBERAEREAREQBERAERCcAlAc59oC8tuO41LaA491QtjY8eAe48X4EK7tfROl0jXsZ1ERPwC5e1vVPqtwrpWTO4nGtI+DTwj7gF1lI2K72VzQfsquAgEeTh/wDtUeGXp5E5vyaORWnkRuj69PxRzbUR+ixNXGWuJx1WzXOmfT1MtPI0tfG8tIPgsNWRZBX1aizZ8bz8Zra80YaQHmvB4UyRpB4So8gxlXU9nHi9MhzNUWRqnyBRpGc1kuQZDcF4vHopbm4Xg4eK0aL9FnkRnBX/ALC7bfR7I9V32JvtD28VJC4fzTf2z6lYPY7bY3aoj1HfIcUEZ4qaB4/nXeDj6BWtq6/NANsoHYAGJHt6D90Lwntd7TU8Nx5Lf7v0X5n0b2b4K3rJuXwX5/oQNX3z6RmNJSuPsrDgkfrkfwWvFpwvVrF9Fi/MfEeKW52Q7rn1f3L0R9BjUkiK5q8ntUqRuF4yBa02EFkNEORqjvClyDqvqgttXcqoU9HCZHnqfBo8yV18aMrJKMFtspWIxcnIKZbrDd7lg0lBM5p6PcOFvzKsvTWi6G3Bs9YBVVXqPqt9wWWvF9sVip+O53OjoYx4SSBv3dV7vh/svZNJ3vXuXci8BPrJlbM22vkrcvnpIj5FxP4LH3bbnUdPEXwxw1QHhG8A/etxdvDto2Xuzq2i4v8ARfj58K2iw6isV+h72z3akrW/9lICfl1Xcn7M48I9YyXvH0eqXRM5vulFWUM5graSamkHhIwjPu81ipx1XVN7s1uvNG+luFMyVjh1I5j3FULuRoiq0xUGoicZ7dI77OTHNn7rvzXGzOE2Yq54vcfwKV+K61tdUV/P0K+bLWvtt9oq+OR0boJ2v4gcYGef3ZX3P4rHVAzkKCl6e0c5vT2dqUM7aqigqW/oyxtePiMr2Wt7Y1puGgbPVO6upw3n+6S3+C2Re2hLmipep6aEuaKYREWxsEREAREQBERAEREAREQBERAEREAREQBERAF+P5scPHC/UQHGuqWuZqy6h3X2yX+2V0hsffTedC0scrgaijHcPA8m8mn5YVB7q0P0duPeKfBAMwkb68TQ78SsntRqx+ltQsnmkf7BP9SpYOYx+1jzHVeaov8Ao2S+bs+jODjWeDe0+3Ys7dnT76et+madhME3KUAfou8/iq3qI+RXSjTR3O3hw7uopZ2ZHi1wKqrWuga2jkfV2mN1TTHJMQ5vZ7vML6TwriUeVV2P4M4HtFwGbk8ihbT7peXvKqq48HiAUORvL0WbrYC1zmSNLXt5Oa4YIWJnZwkhesqnzI+YZVTrlshPGFHkb6KZI35L3tVmud4qhTWyimqZCRngaSG+8+CklKMFzSekZx4ztkowW2/QwcgVk7Q7ZTX+pivF6idHaozlkThh0xB5e4Lcdv8AZ+GimjuOpnR1MzTxMpm82NP73n+C27VmqIqFjrday0zAcLnNH1Yx5D1Xi/aH2qow6XyS6ev5I+k8A9lZQavzV8I/r+h96ovkFspRabY1rHtbwng5CNvkPVaWw88kkk+Kjh7nvL3uLnOOST1JXswr838d4rdxO92T7LsvT9/U+kU6RKZjC+nHkvBrl9F68zKp7Lymkj8lUaRer3ZWQ09ZJrxU4GWU7D9o/H3D1XT4fiW5VsaqluTKtskRrBZam8VQjiHBC0/aSEdB6eqsq20FvslAWxBkMbBmSR56+pK96OmpLbRCKFrIYY25JP4krmDtAbsTahml05p2qdHaWO4aiZnI1BHgD+zn5r7j7Mey0aNJdZ+cvT3L/OpzMrKhjx5pd/Ize8u/ksM89j0Tw8TDwy3F31gD4hg/ifkucrvX3G61L6m519TWTPcXF00hdz9B0HwXo9oxgBR3tX1PFwqsaPLBfb5nBeXO57kyC+NuMcDfkvez3O6WOtjrrPcKigqI3BzXQvIGfUdD8Ukao8jcqS2Ca6k9c9djr/s8b1Ra1DdOagDIL9FHlkgOGVTR1IHg4eSuO7W+lulumoK2JssEzS1zSv5w2ivq7Nd6W7UEroqqllEkTx1BH/vC/oVt3qOHVmi7Xf4i3NXA10gb0bIOTx8HArx/FcGNL5or6rOvRb4kdM5t1xYKjTd+qLXOS4MOYn4/TZ4H5LV5+pV+9o+0MktdFemNxJC/uXn913T78KgpwSSGjJPIAL55kY6oucF28jjZdXhzcTqjZUEbYWXP+Sd/bctxWE0JRNt2jbVRtGAymacep+sfxWbXqqVy1xXuR3qlqEV7giIpCQIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIChO03aO6u1tvbGfVmjMDyB4tOefwKqmmORhdWblacZqfSNXbcN7/h44HHweOi5SYyWnnfBPG6KWNxa9jurSOoK81xahws5vJnDzquS3m8mWPtruBXaac2jquOqthP83nLovVv5K97Bf7TfKZs1urYpsjJZxYe33jqFyhTuWTt9RPSztnpp5IJB0cx2CquLxazG+rJbib4+XKtafVHTl30/ZrsD7fb4JnEY4iwZ+a1ifarSckhe2CoZnwEpwq+tO4WqKSMR+2R1DR075mT88rKs3M1G4YMdF7+7P5rt1e1cKl9WUkLqOH5T3dUm/ekbnQbY6QpXh5t3tBH+WcXj5FZ2WexabouAezUUTR9WNgAJ9wCqir1tqKtbwurRC0+ETcLFS1E1RIZKiV8rz1LjlUM72ulYtQ3J+99PkS0V4uMtY9aj8EkbpqPW9RcA6mtrX00B5F55OcP4LWYzhQ2OwvZjl4TPyb8yfPbLb/Asxsb6smscvZjlDY5erXri21FqEyWHL9L8qMH5WY03Zqi8VQa0FlO0/aSfwHqo8fAtybVVVHcmTeIfenbPPd6rhALKdp+0k/gPVWVSU8FDSNhia2OKNvu+JXzR01NbqJsMQbHFGOZP4lUHvtuqasy6b0zUubC0ltXVM/XP7LfTzK+0+y/susVckOs3/NL093w/EoZ2dXi189j+C9TH9oDdU3Z0+l9N1LhQtJjrKlhx33gWNPi318VRL2+AU57cBR5Gr6vjYsMWtVwPFWZs8mxzn/8ACG9q8JGqW9q8ZGqwT1z0QXt6rwkapsjVHkasNbOhXMhPb4LrbsWXWWp0DcbVNIXChrT3I/ZY5od/aLlydI1dPdiKnf8AQmoKrB7s1TY/iGNP8VxOMwX0Z79x08OT5y0t+mtdtnXuPVskJH/mNXPeh7TNe9Y223w/4ycOeSOQa36xz8sfFX72gqmOLbmpgccOnmia31w8H+C1js4aWdEyp1PVtx3g7mlH7vVzvuGPivm2VV42ZGPu6mcmvxcmMS54mNiiZGwYaxoaPcF9Ii7J1AiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAKjt+tDPjqn6rtUJLH49sjYOh/b/NXivmWNksbo5GNexww5rhkEeRUGRRG+DhIhvpV0OVnHFM7OFkYHKwdzdr6ugqJbtpyEzUZPFJTN5uj8y0eI9FXFO7BweRBwR5FeMy8adEuWaOJOuVUuWRk4XcgpkLljYXqXE5cycTMWZKFylRnKx0T1Lieq0kTxZMYvVrlGY5ejXc1XnEljLRJa5ejXr4oKaprahsFJC+aQ/qtGVYGmNDiJzam8EPcOYgB5D3+alxOE3509Vx6evki1W5S7GG0rpyou7xNLxQ0gPN2ObvQKxv8Ag6y2xznOipaWFuXOccAAeJKwGttdaf0hTGOpmY+pDfs6WL9I+XIdAuddxdf3vV87mVMhp6Bp+pSxnDfTi8z719X9nPZFUR3Fd+8n5/A5nEuO42AnDfNP0X5+hs28O7E9872yaee6C3ZxLUNOHzegPg1U69qku5rxcF9Kx8WvGhyVo8Lfn25lniWvr+BFePkvF7VKeF4vCmJoSIcrfRR3tU2RqjvatS/VPZDkao8jVOeFGkasHQqmQpAAea7h7OumW6Z2ttsTo+CorW+1zHGCS/m3P+zwj4Lnbs+bcT6z1PHc62md9B0EgdLIeQlkHMMHn5ny5ea7Lc0th4IgG4bhoxyC8vx3LUtUx+LPQYFb1zsq/c+21WttX27S1ISKKjPtFfMP1PJvvIPzVlWyiprbb4aGkibFBCwMY0eAC8bLa4LZA9sZMk0zzJPM79KR56k/l0Cnry1dXLJzfdl2Fem5PuwiIpiUIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAdQtL1ftxYdQPdUtjNFWO5maEY4j6jxW6Io7aoWx5ZraNZwjNakjn+8bYantpe6njiuELTyMTsOx6g4WvutV4p3Fs1prmY65gd+S6gX45rXfpNB94XGu4DTN7hJr7ypLBg+z0cxw09ZkD2Spz5dy78lkaW23WbHdW2sdn/sXfkuiO4g/yMf8A4QvtrWt/RaB7gqv8Nxfez7jCwteZSls0XqSr5mh9nb+1K8D7hzW32fbmnj4ZLnVumcOscfJvzW+orlHAMOp7kuZ+/wDQnjjwj7zWLrdLRpKk7mktdXPJjIhpKVzyfeQMfMqrtXa53Au7X09t0/crZTuyMsp3mQj345K98DOcDPuX7geS9PhZFGKlqpPXr2+Rz8/h+Rlrlje4R9EvzOO6jTuppZHSSWS6yPcclzqd5J+5RX6a1J46fun9Vf8AkuzsDyCYHkF2f4ks/wC2vmcCPsVUnvxn8kcWnTGpD00/dD/ur/yXm/TGpR/0duv9Vf8Aku1sDyCYHkFj+I7P7F8yePsjXH/lfyRxG7TGpT/0euv9Uf8AkvJ+ltT/APVy7f1R/wCS7gwPIL9wPILH8RWf2L5liPszXH/kfyOF36X1P/1bu/8AVH/kvGTSuqMctNXc/wC6P/Jd24HkEwPILH8Qz/sXzJo8AhH+t/I4Qp9G6uqpRFDpi7F7jgcVM5o+ZGFZW33Z9vlyq46rVr2W2hB4jTMeHSyehI5AfFdTYHkEUF/Hb7I6glEuU8Jqre5Nsg2C0W+xWmC12umZTUkDeFkbBgBTkRcVtt7Z1EtdEERFgyEREAREQBERAEREAREQBERAEREAREQBEWNu9+s9ocG3G409O49GveAT8FrOcYLcnpGG0urMkix9pvVquwJt1fT1JHURyAkfBYHd7WEOh9DVl7fzn5Q0zP2pXZx9wJ+C3pXjtKvrsw5pR5vI8Nx9ztK6Fhxd60Pq3Nyyli+tI74eAVUzdpmSeV30VoisqIh0cZTk/Jqw+we2Dtc1dRrzWxkrYp53OgilcSJyDzcf3QeQHoumbfbbfb4GwUNFT0sTRgMijDQPgF1rY4mI/DceeS79dIrRd1q5k+VGqUeuZZNp/wCXE9qfFIKT2h1IXYI9Mle20utP5eaTF++jzQ5mdF3Rk4+gBzn4r53qH+CvUIA/5ofxC1LslZG07AT/AM9k/stVfw65YsrUtPm6fA35pK1Q35FvIol2udvtNG+sudbBR07Bl0k0gY0fErV7dunt9cK4UVLqu1unccNaahoyfIc1UjVOa3FNomcop6bNzRfjXNe0OaQ5pGQQeqxDtUaebfxYHXmhF0PSkMze9P8As5ytVFy7Iy2l3MwiLEnUlhGoG6fN2oxdXDIpO9b3pGM/o9enNYUW+yDaXcyyL8e5rGlziGtAyST0WnV26W39FXmhqNV2pk7XcLm+0NPCfI8+S2hXOf8AKthyUe7PbdfWB0No+e/ih9tMT2t7rj4c5OM5UzbvUR1Zo63agNL7KayISd1xcXDnwytC7S9dRXHZarrKGrhqaeSWMskieHNd9bwIWw9n8g7QaeI5f3mz8ArcqYLEVmvrc2vuIVNu7l8tG+ItcuOu9GW6qdS1up7TBOz9KN9WwOHvGV50O4Oia6qjpaTVNomnkdwsjZVsLnHyAyqvg2a3yv5EvPH1Na3t3UO25oALObj7WHH+d4OHHwVj0c3tFLFPw8PeMDseWQub+2qD3lgIGeT+XzXRVmGLTSDOfsW8/greRTCGNVYl1e9/YQ1zk7ZRfZaI+qbr9CadrruYTN7JCZe7BxxY8MrUtlNx/wC6PZ624G1/R/stR3PB3vHxfVa7P3rO7nDO398A/wAzf+CqDsVj/iveyP8APB/Yas1UQliWWNdU0Jzkrox8mdBIvGuq6WhpZKqsqIqeCNvE+SRwa1o8yStQp91tvJ60UcerbUZXO4R/fDQCfflUoVTmtxTZM5Jd2bqi+IZY5omyxPbJG8Za5pyCPQr6e5rGF73BrQMkk4AWhsfqLTK7dTb2irjR1GrLU2YHBAqGnB9TlbTbLhQ3SjZWW6rgq6d4y2WF4c0/EKSVU4Lck0aqUX0TMRuNqUaQ0bcNQmkNX7GwP7kO4eLnjqvnbbU41ho6i1D7J7GKoOPdF/Fw4cW9fgsB2jf6GNRf6uP7QWO2HyNhqDhdg9xPz8vrvVpUweJ4muvNr7NETm/F5fLRaMckcme7ka/HXhOcKJf6/wCi7HXXLu+99lp3zcGccXC0nH3Lnfsn6qs9ptuoI7/qCnpZJaqN0QraoAuHDjlxFXjqO6W27aAvdXbK6nraf2Gob3kEge3IjPLIWMjEePf4b6ra6ma7lZDmRi9m9ff3Q9Oz3f6NNB3VQYe7MnHnDWnOfit4VCdkm4UNs2vuddcauGkpo69xfLK8Na0cDOpKtGwbiaJv1eKC1akt1TVE4bE2dvE73DPNZzcbkvmq4/VTMUWc0IuT6s2pERUScIod4ulus9E6tuldT0VMz9KWaQMaPiVrVr3R0Bc64UVHqq1yTuPC1vtDRxHyHPmpI1TktxTaNXKKemzcUX4CHAEEEHoQq3r77uJHvPR2ens3FpR8WZqrusgcjz4/POBjPis1VOzemui31EpqOiyURFEbBERAEREAREQGrblaifp+xg0+PbKl3dwjy8z8Mha9pDb6nrKFl01I+WrqqhvecDncmg8xn1wvLfeGQNtFXgmFkxDz5HkshqE6n1FJSUdikipbRUU7ZHVTTlwBHNvv9Fwb3GzKn4sebl1qPx8/3KU2pWPmW9dkalrigstnu1ONI1M30o144oYCXAfLx9FrvatrrpLtpYG3OmdTzy1HFMzOcODeXT3lXTpnSlm0xTOqABJO1pMtVNzdjqfcq53fpZtz9qrjLbaJ8dTa6rvYgTkTBoIcB8Dn4LqcBrjh50Z2NR5v6V2Xv+PyNJ1NQkuzfkixtrKSnodubBT0rQ2IUMb8DzcOI/eStlVI9lzcGku2l2aUuUzYLpbSY4myO5zR5yMZ8QSRj0Cu5dPMqnVdKM++y3TNTgmjUd5f6LtQ/wCpu/gtH7LlVFQbMTV0zgI4aiaV/uDGlbvvP/RbqH/U3fwVW7L0VRcOzPeaOjeWTyOn4SPRrD+AVuiKlhtP+5EU3q5NejNU09aL9v8A61rrpeLjNSaaoZeCGKM9W+DQP2sYJPqrIvXZz0BVWx0FviqqCqDfs6hsnEQfMjxWK7Glxo5NF3K1ghlZBWF8kZ5O4S1oBx7wR8FfKkzsu6i911PljHska0Uwsr5pLbZzpsRqO/6N3EqdrNUzmeIB3sMpcThw5gDP6paHfJQK4MHbEhPIkvaPceBfus5G3vtaWuK1Pa99M2Ns0jOeC1jy4H8PivK64p+2HTuqPsw+RhYTyzlpA/Aq8opzdmtOVbb+JA30UfJSOnlzvUMaO2TS5Az3Dzn/AHdy6IXOrJoqztkRezuD+6hex5HQFsDgQuVw/wD5f/VlrJ/p+KPjfzUWo9X7hUm12mJnwROINZIw44j1PEfBrQD7yQtpsXZ10FSWltPc4ai4Vjm/aVDpMHi82jwWp6fq4LB2truLq8RC4xvbTOf0y4tLefuYV0gp8q+zGhXXU+VaT6ebZpVXG1ylPq96Oa9zdtafbzabUcNFc56uhrKmF8McvWHBHL16dVOudwuNt7INLUWuSWOU0sEb3x9Qxzmh33ErOdr280tHtyy0Ofmrr6hvdMHXDTkkrddrLBHBtHZbHdqVkrXW9jKmGQZBJaMgqR5MljQtt6vn38dIx4a8SUY9OhUey20u2+qdFUVzuFU65XSdvHUNbU4dE79nh6/FWLaNjNvLVcqe4UdsmZUU8gkjJmJw4LB6h2BtLax1z0Xe7hpqu/SaIXccWf8AR5fitbq9a7q7U3Cjg1sKO/2eok7tlXGS2QdOpxjOD0x8VmdluVJui59f6X0fw9GYUIVJc8PtI3bVH17AT0w8filBfO0k2jibFYKd0YYAwkQ5Ixy/XXl2xquGtotM1tM7jhnjMsbvNrhkH5FdH2fP0VScXXuW5+SSyFRh1bgpd+/xMKvxLp6k127HNOp7x2hpNP1zLtZIGUDoXCoc0RZDPHo/K2DsYyxxaKvr3HAZXFzvd3TFcG5ORoG94/zOT8FSvZDhdPt9qVjOTn1Dmj/ymp46vwrPqqPVdh4bhfHq30fcwzzfd+dy623vrpKHS1skP1IyfrsBwD6ud19AVt2vdrtl9J6XklvTBQlrMRyiXM73eGAOZK0rs93e7WWza0stkpoZtSw8U1PDMcd4WDhLQPE5B5LdND7NXK+3Jmqd1LhJc7g48bKAO+yj8g78hj4qfIl4NnLz8kI60l3fT/OrNK1zx3y7k/N9kYfsp1+sRc6qihpayfR5DnQVFX9Uxuz9XgBOSCM5xy5BeW9Oo9QbhblM2v0tO6mpYXAVcwdgPOAXE458LQQPflWhqLXlDpnXen9C2m1MqX1ocJWQuDfZm8uE4xzzh3l0VS7bVEFj7Ul7pbqGwy1DpWxPecc3AOaB7wQtKm7LJ5LhpqO0vu2bSXLGNSfnp/ob3aezpoCltXstbHVVtSW4fUuk4XZ8wPBVrXUN92D3EoH0lynq9MV78SB+eHhzggjwc3OQfHBXVqojtotjO39rcccYubR6gGKRV8HMtvuVVr5oy6PZJfTCEOeC00bjv/URVWyF6qoXcUU1I2Rh8wSCFB2Jwdg6EF3CO4n5/wC29Q9yy93ZjlLyS76Mi5/JS9jGl+wFE0Yyaecf+t6j5eXD1/5/kbb3dv3FPdnLbXTGvKC9VGoYJ5H0lQyOLu5eHALcldAR6Ts+i9sb1Z7IyVlJ7HUyYkfxHiMZzz+CrLsYOabVqRo6+1xn/wBCuvXH/wAF3v8A+nz/AP23KTid9jy3W5PlTXT5GuNXFVKWupyjsBoOs3BjnoLncKqDTVBKJXwRuwJpnAAj4Boz7wt63m2P09Y9IVGotKe0UNVbmd9I0yEh7G8yfQhZvsagDbq4cvrG4vOfTu2KxN5jjanU5P8A8sn/ALBU+VnXRzuSL0k9a8veR1Y8HRtrroxXZ81PW6r2yoK+5O46yIuglfnJfwnAcfU9Vu17uEFptFXc6k4hpYXSu9QBnHxVT9kUf4LuLwNVJ+JW+bsU01XtxfaenaXSOpHEAenM/cFzcmqKy5QXRb/Ms1SfgqXno540lYL7v5rCuv19rqik07SSd3HCx3xDGjwOCCT6+KsjUXZz0PWWg09obUW2ta37OoD+Ln+8PFRex1dKCbQFXaoyyOtp6175Y8/Wc0tbh+PgR8FeKt52ZfTe663yqPRJEVFMJ1qUlts537O2qL/p/WlXtjqyd75Y+IUReS7mzJLQf2S0Ej3LYq3XGoY+0bTaRZVt+iXxBzouDnnDvH4BanrHDe15ZnQHDnMYcjxzE7K9rhy7YNJ/3A/BysTrhZN2OK+tDf2kalKMVHfaWjoxEReeOgEREAREQBERAQNQWqlvVpmt9W3Mcg5HxafAhVrbqTX+i5HUdBStu9BnMYDSeH5cwrZRU8jCjdJWJuMl5oinUpPe9Mqyti3B1eRR1VK2zURP2v1S0uHxOSrDsFppbPaIbbTtHdsbh2R+kfElZBEx8ONMnY25SfmxCpRe29soTdPYR1de3al0LXm03IvMroeLhYX/ALTCObSfksDRXHtJWGP2F1uF0azk2V8TX8ve0DK6ZRd2HErOVQsipJeqNHjR3uLa+BXlwp9U6h2Pqqa7UPDqCroS2SnDeH7Tlyx4KN2ctN3fTW3H0XfqI0tSaqR5icc/VLWj+BVmIq7yZOuVaWk3s3VS5lLzS0c76+2m1bpjV8usdrqtzHTPMs9Dnq7OSAP1mnrg9MnCj3PVnaDv9F9EU+j/AKHlm+o6sbA5pb5nLiQPkukEViPEZaXiQUmuzf8AnUjeMuvK2tlT7E7TnRLqi+X2p9v1DWNLZZSciNpIJAz1JIGSofaB2suOq6ui1PpadtNfqFvDni4TK0HLcHwIJPzVyIolnXeP4++v3fD4G7ohycnkc1yax7QzrT9D/wAjXtqOHuvb20zuLy4s54c/Bbj2f9rLjpOpqtS6pqRVX2sBB58Xdh3NxJ8XHxKuNFvZnuVbrhBRT768zWOOlJSk29FU78bTt13DT3W0VAob9R/zUvQSN64J8wQCD4LQ7bqrtB6dohZZtHm8OgHAysdA55cPA8TSAfkukkWKs6Ua1XOKkl235GZUJy5otpnOeiNqdZav1dBq/dGqcWxPEkVASOYByGFv6rfTqfNXdrusvtt0pVVOmLfHXXOMN7incDwu+sAenplZ5FHdlzumpSS0uy8jaFKgml5+ZQn8t9/sf0f0H/gk/wDyWB1Bp3eLdS4UNDqa1UtjtlNJxuIaQD0ycE5JwPNdMop48QVb5oVxT9ev6kbx+bpKTaKC7SugNQ3m1adodK2uSuht0Pclodza1rcN/AK9bbG6K3U8TxhzY2gjyOFIRVrcmVlca3/Tv7yWNSjJyXmYXXVJU1+jrrR0cRlqJqV7I2D9YkdFWfZY0lqLSen7rT6htzqGSaqD42uOeIcDRn7lcyJDJlCmVS7PX3CVac1P0KJ3h2ivUmpxrfbqqFBdw7vZ4WnhEjx1cPDJ8Qcg81ixrftByUotg0NGyocO79sNO8AH9rrw/cuikViHEHyqNkFLXbZG8dbbi2tlQ7L7XXOx3qo1jrKvNx1HVNLQc5bC08yPf09y+t+NpHa1fBfLBOygv9MABJ+iJQOYyR0I8CrcRR/TrvG8ZPr92vTXobeBDk5NdDm2g1V2h7RRCyy6S+kZmDu21z4HOPkCS0hp9+F8a9293Ku21EFLcybzfZ7sKuVjXfzUfdvAHlyLh0XSqKZcScZKUK4p730Rp9G2tOTZW2vNPXi47DS6eoqMy3N1BHEIM4PEMZGVO2QsVxsm1ttst7pfZ6uNsjZYic4Be4j7iFvaKq8mTrdflvZKq0pc3u0c1HQe521+rK2u2/ijutqq3E9w8ZIGeQcOuR5jCtnS9TrC/bZXQaqtMdFeJ4aiJlPG0tBBYQ3qT1JW+Ipbs6VyXPFcy8/PoawoUOz6ehU/Zk0xfdK6MrKG/UDqOokrXSMYTnLSxoz9xW6bo26su23d/tlvh76rqqCWKGPOOJxaQAtkRRWZErLvGffezaNajDkRVnZ707qLSu2EtuuVA2nuTZJXxRSOyCTktyfLOFP2crNwbjT3hmv6GOECfhpQYw3iYc5GPFvTmrERZsyXY5txW5dfh8DEauXST7HOOuNpNY6T1hPrDbCqw2Rxe+iHUEnLmgHk5p64xyyUqr12gdYwCwjT7dOMlHDNXdy5hA8SC4n7sLo5FZXEpNLngpNdm11/cj+jJN8raTKFr9Caob2gLBfW0Lqi10dOyOarzyyInNJx7yptfo3UsnaWpNUstpNnZEGuqOLkDh3h8QrtRR/T7PRfy8v2G30eP37CIiok4REQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREB/9k=" alt="eCloudsHealth" class="logo-img">
+    <span class="logo-text">Revenue Leakage<br>Calculator</span>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="prog-step">
+      <div class="prog-dot done">✓</div>
+      <span class="prog-label">Practice data</span>
+    </div>
+    <div class="prog-line"></div>
+    <div class="prog-step">
+      <div class="prog-dot active">2</div>
+      <span class="prog-label active">Your details</span>
+    </div>
+    <div class="prog-line"></div>
+    <div class="prog-step">
+      <div class="prog-dot">3</div>
+      <span class="prog-label">Your results</span>
+    </div>
+  </div>
+
+  <div class="contact-hero">
+    <div class="contact-hero-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#3d8fee" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div>
+      <h2>Your results are ready.</h2>
+      <p style="color:var(--muted);font-size:14px;line-height:1.6;margin-top:4px">Enter your details below to unlock your personalized revenue leakage report. We'll send a copy to your inbox so you can share it with your team.</p>
+    </div>
+  </div>
+
+  <div class="section-label lbl-blue">// Your contact details</div>
+  <div class="contact-grid">
+
+    <div class="field-group">
+      <span class="field-label">Full name <span class="field-required">*</span></span>
+      <input type="text" id="c_name" placeholder="Dr. Jane Smith">
+      <span class="field-error" id="err_name">Please enter your full name</span>
+    </div>
+
+    <div class="field-group">
+      <span class="field-label">Practice / company name <span class="field-required">*</span></span>
+      <input type="text" id="c_company" placeholder="Riverside Medical Group">
+      <span class="field-error" id="err_company">Please enter your practice name</span>
+    </div>
+
+    <div class="field-group">
+      <span class="field-label">Designation / title <span class="field-required">*</span></span>
+      <input type="text" id="c_title" placeholder="CFO · Revenue Cycle Director">
+      <span class="field-error" id="err_title">Please enter your title</span>
+    </div>
+
+    <div class="field-group">
+      <span class="field-label">Work email <span class="field-required">*</span></span>
+      <input type="email" id="c_email" placeholder="jane@riversidemedical.com" onblur="liveCheckEmail()">
+      <span class="field-error" id="err_email">Please enter a valid email address</span>
+    </div>
+
+    <div class="field-group" style="grid-column: 1 / -1">
+      <span class="field-label">Phone number <span style="color:var(--muted);font-size:10px;text-transform:none;letter-spacing:0">(optional)</span></span>
+      <input type="tel" id="c_phone" placeholder="+1 (555) 000-0000" style="max-width:340px">
+    </div>
+
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-ghost" onclick="goStep1()">← Back</button>
+    <button class="btn-primary" onclick="goStep3()">
+      View my full report
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <p class="consent-line">By submitting, you acknowledge that all results are estimates for illustrative purposes only, do not constitute a guarantee of outcomes or financial advice, and that eCloudsHealth may contact you about its products and services. Full disclaimer shown with your results.</p>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     STEP 3 — RESULTS
+══════════════════════════════════════ -->
+<div class="step" id="step3">
+
+  <div class="logo-line">
+    <img src="data:image/png;base64,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" alt="eCloudsHealth" class="logo-img">
+    <span class="logo-text">Revenue Leakage<br>Calculator</span>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="prog-step">
+      <div class="prog-dot done">✓</div>
+      <span class="prog-label">Practice data</span>
+    </div>
+    <div class="prog-line"></div>
+    <div class="prog-step">
+      <div class="prog-dot done">✓</div>
+      <span class="prog-label">Your details</span>
+    </div>
+    <div class="prog-line"></div>
+    <div class="prog-step">
+      <div class="prog-dot active">3</div>
+      <span class="prog-label active">Your results</span>
+    </div>
+  </div>
+
+  <div class="results-header">
+    <div class="eyebrow">Personalized report</div>
+    <h1><em id="r-firstname">Your</em> revenue cycle analysis</h1>
+    <div class="company-line" id="r-company-line"></div>
+  </div>
+
+  <!-- HERO SUMMARY BOX -->
+  <div class="hero-box">
+    <div class="hero-eyebrow">Estimated annual impact with eCloudsHealth</div>
+    <div class="hero-main">
+      <div class="hero-primary">
+        <div class="hero-label">Net annual benefit (all-in)</div>
+        <div class="hero-value accent" id="h-netsf">—</div>
+        <div class="hero-sublabel">Recurring benefit after all eCloudsHealth costs — fee, Salesforce licensing, and residual staff</div>
+      </div>
+      <div class="hero-secondary">
+        <div class="hero-stat">
+          <div class="hs-label">Year 1 net benefit</div>
+          <div class="hs-value" id="h-year1">—</div>
+          <div class="hs-roi">Year 1 ROI <span id="h-roi-y1">—</span></div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-label">Recurring net benefit</div>
+          <div class="hs-value" id="h-recurring">—</div>
+          <div class="hs-roi">Annual ROI <span id="h-roi-rec">—</span></div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-label">One-time setup</div>
+          <div class="hs-value" id="h-setup">—</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hs-label">Setup payback</div>
+          <div class="hs-value" id="h-payback">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-breakdown">
+      <div class="hb-item"><span class="hb-label">Cost saving (CTC reduction)</span><span class="hb-value" id="h-bd-cost">—</span></div>
+      <div class="hb-item"><span class="hb-label">NCR revenue recovered</span><span class="hb-value" id="h-bd-ncr">—</span></div>
+      <div class="hb-item hb-context"><span class="hb-label">CCR rework cost avoided <span class="hb-tag">incl. in CTC</span></span><span class="hb-value" id="h-bd-ccr">—</span></div>
+      <div class="hb-item hb-context"><span class="hb-label">Working capital released <span class="hb-tag">one-time</span></span><span class="hb-value" id="h-bd-wc">—</span></div>
+    </div>
+    <div class="hero-targets">
+      <div class="ht-title">KPI targets we'll drive toward</div>
+      <div class="ht-row">
+        <div class="ht-item"><span class="ht-label">Clean Claim Rate</span><span class="ht-val"><span id="ht-ccr-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">95%</span></span></div>
+        <div class="ht-item"><span class="ht-label">Net Collection Rate</span><span class="ht-val"><span id="ht-ncr-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">96%</span></span></div>
+        <div class="ht-item"><span class="ht-label">Days in A/R</span><span class="ht-val"><span id="ht-ar-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target">30 days</span></span></div>
+        <div class="ht-item"><span class="ht-label">Cost to Collect</span><span class="ht-val"><span id="ht-ctc-now">—</span> <span class="ht-arrow">→</span> <span class="ht-target" id="ht-ctc-target">—</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAKAGE -->
+  <div class="report-section-label">Revenue leakage today</div>
+  <div class="panel">
+    <div class="panel-head">Where revenue is being lost</div>
+    <div class="panel-body">
+      <div class="metrics-row">
+        <div class="metric hl-blue">
+          <div class="m-label">Total annual revenue leakage</div>
+          <div class="mv mv-lg" id="r-total-leak">—</div>
+          <div class="m-sub">unrecovered revenue / yr</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Lost to denials never reworked</div>
+          <div class="mv mv-sm" id="r-denial-loss">—</div>
+          <div class="m-sub">per year</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Eligibility / intake errors</div>
+          <div class="mv mv-sm" id="r-elig-loss">—</div>
+          <div class="m-sub">per year</div>
+        </div>
+      </div>
+      <div class="inner-div">
+        <div class="report-section-label" style="margin-bottom:14px">Leakage breakdown</div>
+        <div class="bar-rows">
+          <div class="brow"><span class="brow-label">Denials never reworked</span><div class="brow-track"><div class="brow-fill" id="b1" style="width:0%"></div></div><span class="brow-val" id="bv1">—</span></div>
+          <div class="brow"><span class="brow-label">Eligibility errors / intake rework</span><div class="brow-track"><div class="brow-fill" id="b2" style="width:0%"></div></div><span class="brow-val" id="bv2">—</span></div>
+          <div class="brow"><span class="brow-label">Days-to-pay drag (cash flow cost)</span><div class="brow-track"><div class="brow-fill" id="b3" style="width:0%"></div></div><span class="brow-val" id="bv3">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="report-section-label">Performance vs. industry benchmarks</div>
+  <div class="panel">
+    <div class="panel-head">Clinical &amp; financial KPI gaps</div>
+    <div class="panel-body">
+      <div class="metrics-row">
+        <div class="metric hl-blue">
+          <div class="m-label">NCR revenue recovered</div>
+          <div class="mv mv-lg" id="r-ncr-loss">—</div>
+          <div class="m-sub">collectible revenue now captured / yr</div>
+        </div>
+        <div class="metric hl-blue">
+          <div class="m-label">CCR rework cost avoided</div>
+          <div class="mv mv-lg" id="r-ccr-loss">—</div>
+          <div class="m-sub">staff &amp; processing cost on resubmissions</div>
+        </div>
+        <div class="metric hl-blue">
+          <div class="m-label">Working capital released (one-time)</div>
+          <div class="mv mv-lg" id="r-ar-cost">—</div>
+          <div class="m-sub">cash freed by faster A/R · excluded from recurring benefit</div>
+        </div>
+      </div>
+      <div class="inner-div">
+        <div class="report-section-label" style="margin-bottom:14px">Your metrics vs. best practice</div>
+        <div class="bar-rows">
+          <div class="brow">
+            <span class="brow-label">Clean Claim Rate <span id="r-ccr-pct" style="color:#111827;font-weight:600"></span> · target 95%</span>
+            <div class="brow-track" style="width:200px"><div class="brow-fill accent" id="b-ccr-you" style="width:0%"></div></div>
+            <span class="brow-val" id="bv-ccr">—</span>
+          </div>
+          <div class="brow">
+            <span class="brow-label">Net Collection Rate <span id="r-ncr-pct" style="color:#111827;font-weight:600"></span> · target 96%</span>
+            <div class="brow-track" style="width:200px"><div class="brow-fill accent" id="b-ncr-you" style="width:0%"></div></div>
+            <span class="brow-val" id="bv-ncr">—</span>
+          </div>
+          <div class="brow">
+            <span class="brow-label">Avg Days in A/R <span id="r-ar-pct" style="color:#111827;font-weight:600"></span> · target 30 days</span>
+            <div class="brow-track" style="width:200px"><div class="brow-fill accent" id="b-ar-you" style="width:0%"></div></div>
+            <span class="brow-val" id="bv-ar">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECOVERY -->
+  <div class="report-section-label">Recovery potential</div>
+  <div class="panel">
+    <div class="panel-head">What eCloudsHealth can recover</div>
+    <div class="panel-body">
+      <div class="metrics-row">
+        <div class="metric hl-blue">
+          <div class="m-label">Estimated annual recovery</div>
+          <div class="mv mv-lg" id="r-total-rec">—</div>
+          <div class="m-sub">recoverable per year</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Denial recovery (auto rework)</div>
+          <div class="mv mv-sm" id="r-denial-rec">—</div>
+          <div class="m-sub">per year</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Eligibility recovery (auto checks)</div>
+          <div class="mv mv-sm" id="r-elig-rec">—</div>
+          <div class="m-sub">per year</div>
+        </div>
+      </div>
+      <div class="inner-div">
+        <div class="report-section-label" style="margin-bottom:10px">Adjust assumed recovery rate</div>
+        <div class="slider-row" style="margin-bottom:8px">
+          <input type="range" id="recovery_rate" class="slider-blue" min="40" max="90" value="70"
+            oninput="setSV('r-rec-val', this.value, '%'); refreshRecovery()">
+          <span class="sv-blue" id="r-rec-val">70%</span>
+        </div>
+        <div class="hint">eCloudsHealth clients typically recover 60–80% of identified leakage within 12 months</div>
+      </div>
+      <div class="inner-div">
+        <div class="report-section-label" style="margin-bottom:14px">Before vs. after</div>
+        <div class="bar-rows">
+          <div class="brow"><span class="brow-label">Annual leakage today</span><div class="brow-track"><div class="brow-fill" id="cb1" style="width:100%"></div></div><span class="brow-val" id="cv1">—</span></div>
+          <div class="brow"><span class="brow-label">Recovered with eCloudsHealth</span><div class="brow-track"><div class="brow-fill accent" id="cb2" style="width:0%"></div></div><span class="brow-val" id="cv2">—</span></div>
+          <div class="brow"><span class="brow-label">Remaining residual leakage</span><div class="brow-track"><div class="brow-fill" id="cb3" style="width:0%;opacity:.5"></div></div><span class="brow-val" id="cv3">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="report-section-label">Cost comparison</div>
+  <div class="panel">
+    <div class="panel-head">Current system vs. eCloudsHealth</div>
+    <div class="panel-body">
+      <div class="metrics-row">
+        <div class="metric">
+          <div class="m-label">Your current cost to collect</div>
+          <div class="mv mv-lg" id="r-their-total">—</div>
+          <div class="m-sub" id="r-their-sub">based on your stated CTC</div>
+        </div>
+        <div class="metric hl-blue">
+          <div class="m-label">eCloudsHealth all-in annual cost</div>
+          <div class="mv mv-lg mv-blue" id="r-our-total">—</div>
+          <div class="m-sub" id="r-our-sub">fee + SF licensing + residual staff</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Annual cost saving</div>
+          <div class="mv mv-lg" id="r-cost-saving">—</div>
+          <div class="m-sub">vs. your current cost</div>
+        </div>
+      </div>
+      <div class="inner-div">
+        <div class="report-section-label" style="margin-bottom:8px">How eCloudsHealth is priced</div>
+        <div class="note-box" id="r-pricing-note">
+          —
+        </div>
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Cost item</th>
+              <th>Current</th>
+              <th>eCloudsHealth</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="col-label">eCloudsHealth platform fee</td><td class="col-them" id="r-t-total">—</td><td class="col-us" id="r-u-fee">—</td></tr>
+            <tr><td class="col-label">Salesforce Health Cloud licensing</td><td class="col-them">incl. in your CTC</td><td class="col-us" id="r-u-sf">—</td></tr>
+            <tr><td class="col-label">Residual staff to operate system</td><td class="col-them">incl. in your CTC</td><td class="col-us" id="r-u-resid">—</td></tr>
+            <tr class="total-row">
+              <td class="col-label" style="font-size:14px;color:#111827">All-in annual cost to collect</td>
+              <td class="col-them" id="r-t-allin" style="font-size:16px">—</td>
+              <td class="col-us"   id="r-u-total" style="font-size:16px">—</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="note-box" style="margin-top:14px">
+          <strong>Salesforce Health Cloud licensing</strong> (<span id="r-sf-users">—</span> users × $350/user/mo = <span id="r-sf-annual">—</span>/yr) is billed directly by Salesforce as required platform infrastructure. Your projected cost to collect also includes the residual internal staff needed to operate the system. All three layers — our fee, Salesforce licensing, and residual staff — are included in your projected Cost to Collect and netted in the benefit figures at the top of this report.
+        </div>
+        <div class="savings-callout">
+          <div style="flex:1;min-width:200px">
+            <div class="sc-label" style="margin-bottom:10px">Combined annual benefit</div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#4b5563">
+              <div style="display:flex;justify-content:space-between;gap:24px"><span>Cost saving (CTC reduction)</span><span id="r-combined-cost" style="color:#111827;font-weight:600">—</span></div>
+              <div style="display:flex;justify-content:space-between;gap:24px"><span>NCR revenue recovered</span><span id="r-combined-rec" style="color:#111827;font-weight:600">—</span></div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em">Total</div>
+            <span class="sc-value" id="r-combined">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COST TO COLLECT -->
+  <div class="report-section-label">Cost to Collect — HFMA benchmark</div>
+  <div class="panel">
+    <div class="panel-head">Cost to Collect (CTC) comparison</div>
+    <div class="panel-body">
+      <div class="metrics-row">
+        <div class="metric">
+          <div class="m-label">Your current Cost to Collect</div>
+          <div class="mv mv-lg" id="r-ctc-now">—</div>
+          <div class="m-sub" id="r-ctc-now-dollar">—</div>
+        </div>
+        <div class="metric hl-blue">
+          <div class="m-label">Projected CTC with eCloudsHealth</div>
+          <div class="mv mv-lg mv-blue" id="r-ctc-new">—</div>
+          <div class="m-sub" id="r-ctc-new-dollar">—</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Annual CTC saving</div>
+          <div class="mv mv-lg" id="r-ctc-saving">—</div>
+          <div class="m-sub">reduced billing operation cost</div>
+        </div>
+      </div>
+      <div class="inner-div">
+        <div class="report-section-label" style="margin-bottom:14px">Your journey to HFMA best practice</div>
+        <div class="bar-rows">
+          <div class="brow">
+            <span class="brow-label">Today</span>
+            <div class="brow-track" style="width:240px"><div class="brow-fill" id="ctc-bar-now" style="width:0%"></div></div>
+            <span class="brow-val" id="ctc-bv-now">—</span>
+          </div>
+          <div class="brow">
+            <span class="brow-label">With eCloudsHealth</span>
+            <div class="brow-track" style="width:240px"><div class="brow-fill accent" id="ctc-bar-new" style="width:0%"></div></div>
+            <span class="brow-val" id="ctc-bv-new">—</span>
+          </div>
+          <div class="brow">
+            <span class="brow-label">HFMA best practice</span>
+            <div class="brow-track" style="width:240px"><div class="brow-fill" style="width:13%"></div></div>
+            <span class="brow-val">2%</span>
+          </div>
+        </div>
+        <div class="note-box" style="margin-top:18px">
+          Your current Cost to Collect is the figure you provided, which reflects your total billing operation cost today (including your staff). Your projected Cost to Collect with eCloudsHealth is the all-in figure of our platform fee (the greater of a $30,000 annual minimum or 2.5% of net collections), your Salesforce Health Cloud licensing, and the residual internal staff needed to operate the system. This is a like-for-like comparison of total cost to collect on each side. Figures exclude costs such as fringe benefits and IT infrastructure that would affect both scenarios.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Download -->
+  <div class="pdf-bar">
+    <div class="pdf-bar-text">
+      <strong>Share this report or run another scenario</strong>
+      <span>Download a PDF copy, or reset to try different numbers.</span>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-pdf btn-reset" id="reset-btn" onclick="resetCalculator()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3"/>
+        </svg>
+        Reset &amp; start over
+      </button>
+      <button class="btn-pdf" id="pdf-btn" onclick="downloadPDF()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v8M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/>
+        </svg>
+        Download PDF report
+      </button>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <div class="disclaimer-title">Important disclaimer</div>
+    <p>This Revenue Leakage Calculator (the "Tool") is provided by eCloudsHealth for informational and illustrative purposes only. All figures, projections, savings, recovery amounts, cost-to-collect comparisons, and benefits shown are <strong>estimates</strong> generated from the inputs you provide combined with general healthcare industry benchmarks (including those published by MGMA, HFMA, and CMS).</p>
+    <p>These estimates <strong>do not constitute a guarantee, warranty, promise, or representation</strong> of actual results, savings, or financial outcomes. Actual results will vary — potentially materially — based on your organization's specialty, payer mix, contract terms, patient population, current systems, workflow maturity, staffing, regulatory environment, and numerous other factors outside eCloudsHealth's control.</p>
+    <p>Cost-to-Collect, Clean Claim Rate, Net Collection Rate, and Days in A/R comparisons are calculated on a consistent basis across current-state and projected scenarios. Your current Cost to Collect is taken from the figure you provide. The projected Cost to Collect reflects the eCloudsHealth platform fee (the greater of a $30,000 annual minimum or 2.5% of net collections), Salesforce Health Cloud licensing billed separately by Salesforce, and an estimate of the residual internal staff needed to operate the system. Certain costs (such as fringe benefits and IT infrastructure) are excluded and would affect both scenarios. All assumptions are generalizations and may not reflect your actual costs.</p>
+    <p>This Tool does not constitute financial, accounting, legal, tax, or professional advice, and should not be relied upon as the sole basis for any business decision. You should consult your own qualified advisors and conduct independent due diligence before making any purchasing or financial decision. eCloudsHealth disclaims all liability for any action taken or not taken in reliance on the outputs of this Tool to the fullest extent permitted by law.</p>
+    <p>By using this Tool and submitting your information, you acknowledge and agree to the above. Information you submit may be used by eCloudsHealth to contact you regarding its products and services in accordance with its Privacy Policy.</p>
+    <div class="disclaimer-footer">© <span id="year"></span> eCloudsHealth · Built on Salesforce Health Cloud · eclouds.com</div>
+  </div>
+
+</div><!-- /step3 -->
+</div><!-- /wrapper -->
+
+<script>
+/* ── Helpers ── */
+function fmt(n) {
+  if (isNaN(n)) return '—';
+  const a = Math.abs(n), s = n < 0 ? '-' : '';
+  if (a >= 1000000) return s + '$' + (a / 1000000).toFixed(2) + 'M';
+  if (a >= 1000)    return s + '$' + Math.round(a / 1000) + 'K';
+  return s + '$' + Math.round(a);
+}
+function setSV(id, val, sfx) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val + sfx;
+}
+function set(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+function setW(id, pct) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = Math.max(0, Math.min(100, Math.round(pct))) + '%';
+}
+
+/* ── Auto-scale residual hours + CTC to claim volume ── */
+/* Residual: ~1 staff hr/week per 100 claims/month, floor 5 hrs/wk. */
+/* CTC by size: ≤500/mo → 10%, 501–1500 → 7.5%, 1501+ → 5%. */
+/* Both stop auto-updating once the user edits them manually. */
+let residualEdited = false;
+let ctcEdited = false;
+function autoScaleResidual() {
+  const claims = parseFloat(document.getElementById('claims').value) || 0;
+  if (!residualEdited) {
+    const scaled = Math.max(5, Math.round(claims / 100));
+    const el = document.getElementById('residual_hrs');
+    if (el) el.value = scaled;
+  }
+  if (!ctcEdited) {
+    let ctcVal;
+    if (claims <= 500)        ctcVal = 10;
+    else if (claims <= 1500)  ctcVal = 7.5;
+    else                      ctcVal = 5;
+    const ctcEl = document.getElementById('ctc');
+    if (ctcEl) { ctcEl.value = ctcVal; setSV('ctc_val', ctcVal, '%'); }
+  }
+}
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step' + n).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Step 1 → 2 ── */
+function goStep2() {
+  const claims   = parseFloat(document.getElementById('claims').value);
+  const avgClaim = parseFloat(document.getElementById('avg_claim').value);
+  if (!claims || claims < 1 || !avgClaim || avgClaim < 1) {
+    alert('Please enter a valid monthly claims volume and average claim value to continue.');
+    return;
+  }
+  showStep(2);
+}
+
+/* ── Step 2 → 1 ── */
+function goStep1() { showStep(1); }
+
+/* ── Email validation helpers ── */
+// Known disposable / throwaway email domains
+const DISPOSABLE_DOMAINS = [
+  'mailinator.com','guerrillamail.com','guerrillamail.net','10minutemail.com',
+  '10minutemail.net','tempmail.com','temp-mail.org','throwawaymail.com',
+  'yopmail.com','getnada.com','trashmail.com','sharklasers.com','grr.la',
+  'maildrop.cc','dispostable.com','fakeinbox.com','mailnesia.com','mintemail.com',
+  'mohmal.com','mytemp.email','spam4.me','tempinbox.com','emailondeck.com',
+  'tempmailo.com','mailcatch.com','inboxbear.com','luxusmail.org','burnermail.io',
+  'fakemailgenerator.com','tempr.email','mailsac.com','easytrashmail.com',
+  'wegwerfmail.de','nada.email','vomoto.com','spambox.us','33mail.com','tmpmail.org'
+];
+
+// Strict RFC-aligned (practical) email pattern: rejects consecutive dots,
+// leading/trailing dots, missing TLD, spaces, and requires a 2+ char TLD
+const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+
+function validateEmail(raw) {
+  const email = (raw || '').trim().toLowerCase();
+  if (!email) return { ok: false, msg: 'Please enter your work email' };
+  // No consecutive dots, no leading/trailing dots in local part
+  if (email.includes('..')) return { ok: false, msg: 'Please enter a valid email address' };
+  if (!EMAIL_RE.test(email)) return { ok: false, msg: 'Please enter a valid email address' };
+  const domain = email.split('@')[1];
+  // Domain must contain at least one dot and a real TLD
+  if (!domain || domain.split('.').length < 2) {
+    return { ok: false, msg: 'Please enter a valid email address' };
+  }
+  // Block disposable / throwaway domains
+  if (DISPOSABLE_DOMAINS.includes(domain)) {
+    return { ok: false, msg: 'Please use a permanent work email address' };
+  }
+  return { ok: true, msg: '' };
+}
+
+/* ── Contact validation ── */
+function validateContact() {
+  let ok = true;
+
+  // Name, company, title — simple non-empty checks
+  const simple = [
+    { id: 'c_name',    err: 'err_name' },
+    { id: 'c_company', err: 'err_company' },
+    { id: 'c_title',   err: 'err_title' },
+  ];
+  simple.forEach(r => {
+    const inp = document.getElementById(r.id);
+    const err = document.getElementById(r.err);
+    const pass = inp.value.trim().length > 1;
+    err.style.display = pass ? 'none' : 'block';
+    inp.classList.toggle('invalid', !pass);
+    if (!pass) ok = false;
+  });
+
+  // Email — strict validation with dynamic message
+  const emailInp = document.getElementById('c_email');
+  const emailErr = document.getElementById('err_email');
+  const result = validateEmail(emailInp.value);
+  emailErr.textContent = result.msg || 'Please enter a valid email address';
+  emailErr.style.display = result.ok ? 'none' : 'block';
+  emailInp.classList.toggle('invalid', !result.ok);
+  if (!result.ok) ok = false;
+
+  return ok;
+}
+
+/* ── Live email check on blur ── */
+function liveCheckEmail() {
+  const emailInp = document.getElementById('c_email');
+  if (!emailInp.value.trim()) return; // don't show error on empty until submit
+  const emailErr = document.getElementById('err_email');
+  const result = validateEmail(emailInp.value);
+  emailErr.textContent = result.msg || 'Please enter a valid email address';
+  emailErr.style.display = result.ok ? 'none' : 'block';
+  emailInp.classList.toggle('invalid', !result.ok);
+}
+
+/* ── Compute all numbers ── */
+function compute() {
+  const claims      = parseFloat(document.getElementById('claims').value)        || 0;
+  const avgClaim    = parseFloat(document.getElementById('avg_claim').value)     || 0;
+  const providers   = parseFloat(document.getElementById('providers').value)     || 0;
+  const sfUsers     = parseFloat(document.getElementById('sf_users').value)      || 0;
+  const denialRate  = parseFloat(document.getElementById('denial_rate').value)   / 100;
+  const reworkRate  = parseFloat(document.getElementById('rework_rate').value)   / 100;
+  const recRate     = parseFloat(document.getElementById('recovery_rate').value) / 100;
+  const sfLicensePerUserMo = 350;
+  const ccr         = parseFloat(document.getElementById('ccr').value)      / 100;
+  const ncr         = parseFloat(document.getElementById('ncr').value)      / 100;
+  const daysAR      = parseFloat(document.getElementById('days_ar').value)  || 0;
+  const ctcCurrent  = parseFloat(document.getElementById('ctc').value)      / 100;
+
+  // Billing model (qualifying data point only — not used in cost math)
+  const billingModel = document.querySelector('.billing-opt.selected').dataset.model; // 'inhouse' | 'outsourced'
+
+  const annualClaims  = claims * 12;
+  const annualRevenue = annualClaims * avgClaim;
+  const cashCollected = annualRevenue * ncr;
+
+  // ── Residual team to operate eCloudsHealth (applies to both models) ──
+  const residualHrs  = parseFloat(document.getElementById('residual_hrs').value)  || 0;
+  const residualCost = parseFloat(document.getElementById('residual_cost').value) || 0;
+  const residualStaffAnnual = residualHrs * 52 * residualCost;
+
+  // ── eCloudsHealth recurring fee (to eHealth) ──
+  // Greater of a $30K floor OR 2.5% of net collections. Floor = $18K platform + $12K
+  // (500 claims/mo min × $2). Targets ~2.5% at scale; floor protects small accounts.
+  const ehealthFloor   = 30000;
+  const targetRatePct  = 0.025;
+  const ourFeeByRate   = targetRatePct * cashCollected;
+  const ourFee         = Math.max(ehealthFloor, ourFeeByRate);
+  const feeIsFloor     = ourFee === ehealthFloor && ourFeeByRate < ehealthFloor;
+  const ourFeePct      = cashCollected > 0 ? ourFee / cashCollected : 0;
+
+  // ── Salesforce Health Cloud licensing (paid to Salesforce) ──
+  const sfLicenseAnnual = sfUsers * sfLicensePerUserMo * 12;
+  const sfLicensePct    = cashCollected > 0 ? sfLicenseAnnual / cashCollected : 0;
+
+  // ── eCloudsHealth all-in cost = 3 layers: fee + SF licensing + residual staff ──
+  const residualPct = cashCollected > 0 ? residualStaffAnnual / cashCollected : 0;
+  const ourAllInDollar = ourFee + sfLicenseAnnual + residualStaffAnnual;
+  const ourTotal  = ourFee;   // the eCloudsHealth fee component (used in cost-saving math below)
+
+  // ── Their current cost = their stated CTC% × cash collected (includes their staff) ──
+  const theirTotal = ctcCurrent * cashCollected;
+
+  // Cost saving = their total cost to collect − our all-in cost to collect (all 3 layers).
+  // This is the honest, like-for-like comparison: their CTC already includes their staff,
+  // so we compare against our fee + SF + residual staff.
+  const costSaving = theirTotal - ourAllInDollar;
+
+  // ── Leakage (lost REVENUE only — staff cost removed; it lives in CTC, not leakage) ──
+  const denialLoss  = annualRevenue * denialRate * reworkRate;
+  const eligLoss    = annualRevenue * 0.03;
+  const daysDrag    = annualRevenue * 0.02;
+  const totalLeak   = denialLoss + eligLoss + daysDrag;
+
+  // ── KPI calculations (corrected treatment) ──
+  const ccrBenchmark = 0.95;
+  const ncrBenchmark = 0.96;
+  const arBenchmark  = 30;
+
+  // NCR gap → genuine recurring REVENUE recovered (collectible revenue not collected)
+  const ncrGap   = Math.max(0, ncrBenchmark - ncr);
+  const ncrGain  = annualRevenue * ncrGap;
+
+  // CCR gap → REWORK COST AVOIDED, not lost revenue (~$25/claim rework, MGMA).
+  const ccrGap        = Math.max(0, ccrBenchmark - ccr);
+  const reworkPerClaim = 25;
+  const ccrReworkAvoided = annualClaims * ccrGap * reworkPerClaim;
+
+  // A/R days → ONE-TIME working capital released (NOT recurring), excluded from combined.
+  const arExcessDays   = Math.max(0, daysAR - arBenchmark);
+  const dailyRevenue   = annualRevenue / 365;
+  const workingCapitalReleased = arExcessDays * dailyRevenue;
+
+  // ── Recovery (revenue recovered via automation — staff time removed) ──
+  const denialRec   = denialLoss  * recRate;
+  const eligRec     = eligLoss    * recRate;
+  const totalRec    = denialRec + eligRec;
+  const residual    = Math.max(0, totalLeak - totalRec);
+
+  // ── Cost to Collect (CTC) — 3 layers on our side ──
+  // Their CTC = their input (already includes their staff).
+  // Projected CTC = our fee% + SF licensing% + residual staff% (true all-in on our platform).
+  const ctcCurrentDollar = ctcCurrent * cashCollected;
+  const ctcProjected     = ourFeePct + sfLicensePct + residualPct;   // all-in incl. residual staff
+  const ourCTCDollar     = ourAllInDollar;                            // fee + SF + residual staff
+  const ctcSaving        = Math.max(0, ctcCurrentDollar - ourCTCDollar);
+
+  // ── Combined annual benefit (RECURRING only) ──
+  // = cost saving (their all-in CTC − our all-in CTC) + NCR revenue gain.
+  // costSaving already nets SF licensing AND residual staff (all 3 layers), so it is the
+  // true recurring cost reduction. SF is NOT deducted again. No double-count.
+  // CCR rework-avoided and A/R working capital are context only (not added).
+  const combined        = costSaving + ncrGain;
+  const combinedNetSF   = combined;   // SF & residual already inside costSaving — net benefit is final
+
+  // ── One-time setup + Year 1 / payback ──
+  const setupCost     = parseFloat(document.querySelector('.complexity-opt.selected').dataset.cost) || 70000;
+  const year1Net      = combinedNetSF - setupCost;
+  const paybackMonths = combinedNetSF > 0 ? (setupCost / combinedNetSF) * 12 : 0;
+
+  // ── ROI ──
+  const recurringNet  = combinedNetSF;
+  // Year 1 investment = setup + our all-in annual cost (fee + SF + residual staff)
+  const year1Invest   = setupCost + ourAllInDollar;
+  // Recurring investment = our all-in annual cost (no setup)
+  const recurringInvest = ourAllInDollar;
+  const roiYear1      = year1Invest > 0 ? (year1Net / year1Invest) * 100 : 0;
+  const roiRecurring  = recurringInvest > 0 ? (recurringNet / recurringInvest) * 100 : 0;
+
+  return {
+    billingModel, providers, sfUsers, sfLicenseAnnual, sfLicensePct,
+    residualHrs, residualCost, residualStaffAnnual, residualPct,
+    annualClaims, annualRevenue, cashCollected,
+    denialLoss, eligLoss, daysDrag, totalLeak,
+    denialRec, eligRec, totalRec, residual,
+    theirTotal, ourFee, ourFeePct, feeIsFloor, ehealthFloor, targetRatePct,
+    ourAllInDollar, ourTotal, costSaving,
+    ccr, ncr, daysAR, ncrGap, ncrGain, ccrGap, ccrReworkAvoided,
+    arExcessDays, workingCapitalReleased,
+    ctcCurrent, ctcCurrentDollar, ctcProjected, ourCTCDollar, ctcSaving,
+    combined, combinedNetSF, recurringNet,
+    setupCost, year1Net, paybackMonths,
+    roiYear1, roiRecurring, year1Invest, recurringInvest
+  };
+}
+
+/* ── Render all results into step 3 ── */
+function renderResults(d) {
+  // Hero summary box
+  set('h-netsf',    fmt(d.combinedNetSF));
+  set('h-year1',    fmt(d.year1Net));
+  set('h-recurring', fmt(d.recurringNet));
+  set('h-roi-y1',   Math.round(d.roiYear1) + '%');
+  set('h-roi-rec',  Math.round(d.roiRecurring) + '%');
+  set('h-payback',  d.paybackMonths > 0 ? d.paybackMonths.toFixed(1) + ' mo' : '—');
+  set('h-setup',    fmt(d.setupCost));
+  set('h-bd-cost',  fmt(d.costSaving));
+  set('h-bd-ncr',   fmt(d.ncrGain));
+  set('h-bd-ccr',   fmt(d.ccrReworkAvoided));
+  set('h-bd-wc',    fmt(d.workingCapitalReleased));
+  set('ht-ccr-now', Math.round(d.ccr * 100) + '%');
+  set('ht-ncr-now', Math.round(d.ncr * 100) + '%');
+  set('ht-ar-now',  Math.round(d.daysAR) + ' days');
+  set('ht-ctc-now', (d.ctcCurrent * 100).toFixed(1) + '%');
+  set('ht-ctc-target', (d.ctcProjected * 100).toFixed(1) + '%');
+
+  // Leakage (3 buckets — staff removed)
+  set('r-total-leak', fmt(d.totalLeak));
+  set('r-denial-loss', fmt(d.denialLoss));
+  set('r-elig-loss',   fmt(d.eligLoss));
+  const leakItems = [d.denialLoss, d.eligLoss, d.daysDrag];
+  const leakMax   = Math.max(...leakItems, 1);
+  ['b1','b2','b3'].forEach((id, i) => setW(id, (leakItems[i] / leakMax) * 100));
+  ['bv1','bv2','bv3'].forEach((id, i) => set(id, fmt(leakItems[i])));
+
+  // Recovery (2 items — staff time removed)
+  set('r-total-rec',  fmt(d.totalRec));
+  set('r-denial-rec', fmt(d.denialRec));
+  set('r-elig-rec',   fmt(d.eligRec));
+  setW('cb1', 100);
+  setW('cb2', (d.totalRec / Math.max(d.totalLeak, 1)) * 100);
+  setW('cb3', (d.residual / Math.max(d.totalLeak, 1)) * 100);
+  set('cv1', fmt(d.totalLeak));
+  set('cv2', fmt(d.totalRec));
+  set('cv3', fmt(d.residual));
+
+  // Pricing — new model: their CTC$ vs our fee (max of $30K floor or 2.5% of collections)
+  set('r-their-total', fmt(d.theirTotal));
+  set('r-their-sub',   'based on your stated CTC of ' + (d.ctcCurrent * 100).toFixed(1) + '%');
+  set('r-our-total',   fmt(d.ourFee + d.sfLicenseAnnual + d.residualStaffAnnual));
+  set('r-cost-saving', fmt(d.costSaving));
+
+  // Pricing model explanation (adaptive: floor vs % of collections)
+  if (d.feeIsFloor) {
+    set('r-pricing-note',
+      'eCloudsHealth is priced at the greater of a $30,000 annual minimum (platform + claims processing) or 2.5% of net collections. At your volume the $30,000 minimum applies. Your projected cost to collect also includes Salesforce licensing and the residual internal staff needed to operate the system.');
+  } else {
+    set('r-pricing-note',
+      'eCloudsHealth is priced at ' + (d.targetRatePct * 100).toFixed(1) + '% of net collections, with a $30,000 annual minimum. At your volume the percentage applies — keeping your cost to collect predictable as you grow, versus 4–7% typical for outsourced billing. Your projected cost to collect also includes Salesforce licensing and the residual internal staff needed to operate the system.');
+  }
+
+  // Comparison table
+  set('r-our-sub', d.feeIsFloor ? '$30K minimum + SF licensing + residual staff' : '2.5% of collections + SF licensing + residual staff');
+  set('r-t-total',  '—');
+  set('r-u-fee',    fmt(d.ourFee));
+  set('r-u-sf',     fmt(d.sfLicenseAnnual));
+  set('r-u-resid',  fmt(d.residualStaffAnnual));
+  set('r-t-allin',  fmt(d.theirTotal));
+  set('r-u-total',  fmt(d.ourFee + d.sfLicenseAnnual + d.residualStaffAnnual));
+  set('r-sf-users',  Math.round(d.sfUsers));
+  set('r-sf-annual', fmt(d.sfLicenseAnnual));
+
+  set('r-combined', fmt(d.combined));
+  set('r-combined-cost', fmt(d.costSaving));
+  set('r-combined-rec',  fmt(d.ncrGain));
+  set('r-ccr-loss', fmt(d.ccrReworkAvoided));
+  set('r-ncr-loss', fmt(d.ncrGain));
+  set('r-ar-cost',  fmt(d.workingCapitalReleased));
+  set('r-ccr-pct',  Math.round(d.ccr * 100) + '%');
+  set('r-ncr-pct',  Math.round(d.ncr * 100) + '%');
+  set('r-ar-pct',   Math.round(d.daysAR) + ' days');
+  setW('b-ccr-you', Math.min(100, (d.ccr / 0.95) * 100));
+  setW('b-ncr-you', Math.min(100, (d.ncr / 0.96) * 100));
+  setW('b-ar-you',  Math.min(100, (30 / Math.max(d.daysAR, 1)) * 100));
+  set('bv-ccr', Math.round(d.ccr * 100) + '% vs 95%');
+  set('bv-ncr', Math.round(d.ncr * 100) + '% vs 96%');
+  set('bv-ar',  Math.round(d.daysAR) + ' vs 30 days');
+
+  // Cost to Collect
+  set('r-ctc-now', (d.ctcCurrent * 100).toFixed(1) + '%');
+  set('r-ctc-now-dollar', fmt(d.ctcCurrentDollar) + ' / yr');
+  set('r-ctc-new', (d.ctcProjected * 100).toFixed(1) + '%');
+  set('r-ctc-new-dollar', fmt(d.ourCTCDollar) + ' / yr');
+  set('r-ctc-saving', fmt(d.ctcSaving));
+  // CTC journey bars — scale relative to current (worst) CTC, min 15 width for visibility
+  const ctcMax = Math.max(d.ctcCurrent, 0.02, 0.0001);
+  setW('ctc-bar-now', 100);
+  setW('ctc-bar-new', Math.max(10, (d.ctcProjected / ctcMax) * 100));
+  set('ctc-bv-now', (d.ctcCurrent * 100).toFixed(1) + '%');
+  set('ctc-bv-new', (d.ctcProjected * 100).toFixed(1) + '%');
+}
+
+/* ── Recovery slider refreshes relevant numbers only ── */
+function refreshRecovery() {
+  const d = compute();
+  set('r-total-rec',  fmt(d.totalRec));
+  set('r-denial-rec', fmt(d.denialRec));
+  set('r-elig-rec',   fmt(d.eligRec));
+  setW('cb2', (d.totalRec / Math.max(d.totalLeak, 1)) * 100);
+  setW('cb3', (d.residual / Math.max(d.totalLeak, 1)) * 100);
+  set('cv2', fmt(d.totalRec));
+  set('cv3', fmt(d.residual));
+  set('r-combined', fmt(d.combined));
+  set('r-combined-cost', fmt(d.costSaving));
+  set('r-combined-rec',  fmt(d.ncrGain));
+  // Hero box
+  set('h-netsf',    fmt(d.combinedNetSF));
+  set('h-year1',    fmt(d.year1Net));
+  set('h-recurring', fmt(d.recurringNet));
+  set('h-roi-y1',   Math.round(d.roiYear1) + '%');
+  set('h-roi-rec',  Math.round(d.roiRecurring) + '%');
+  set('h-payback',  d.paybackMonths > 0 ? d.paybackMonths.toFixed(1) + ' mo' : '—');
+  set('h-bd-cost',  fmt(d.costSaving));
+  set('h-bd-ncr',   fmt(d.ncrGain));
+  set('h-bd-ccr',   fmt(d.ccrReworkAvoided));
+  set('h-bd-wc',    fmt(d.workingCapitalReleased));
+}
+
+/* ── Complexity selector ── */
+function selectComplexity(btn) {
+  document.querySelectorAll('.complexity-opt').forEach(o => o.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+/* ── Billing model selector (qualifying data point only) ── */
+function selectBilling(btn) {
+  document.querySelectorAll('.billing-opt').forEach(o => o.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+/* ── Step 2 → 3 ── */
+function goStep3() {
+  if (!validateContact()) return;
+
+  const name    = document.getElementById('c_name').value.trim();
+  const company = document.getElementById('c_company').value.trim();
+  const title   = document.getElementById('c_title').value.trim();
+  const email   = document.getElementById('c_email').value.trim();
+  const phone   = document.getElementById('c_phone').value.trim();
+
+  // Personalise results header
+  const firstName = name.split(' ')[0];
+  set('r-firstname', firstName + "'s");
+  set('r-company-line', company + ' · ' + title);
+
+  // Compute and render
+  const d = compute();
+  renderResults(d);
+  showStep(3);
+
+  // Post lead data to Google Sheets
+  const payload = {
+    name, company, title, email, phone,
+    billingModel:  d.billingModel,
+    providers:     Math.round(d.providers),
+    sfUsers:       Math.round(d.sfUsers),
+    claims:        parseFloat(document.getElementById('claims').value)       || 0,
+    avgClaim:      parseFloat(document.getElementById('avg_claim').value)    || 0,
+    annualClaims:  Math.round(d.annualClaims),
+    annualRevenue: Math.round(d.annualRevenue),
+    denialRate:    parseFloat(document.getElementById('denial_rate').value)  || 0,
+    reworkRate:    parseFloat(document.getElementById('rework_rate').value)  || 0,
+    outsourceFee:  d.billingModel === 'outsourced' ? (d.outsourceFeePct * 100).toFixed(1) + '%' : '—',
+    reconHrs:      d.billingModel === 'outsourced' ? Math.round(d.reconHrs) : '—',
+    staffAnnual:   Math.round(d.staffAnnual),
+    totalLeak:     Math.round(d.totalLeak),
+    denialLoss:    Math.round(d.denialLoss),
+    eligLoss:      Math.round(d.eligLoss),
+    daysDrag:      Math.round(d.daysDrag),
+    recRate:       parseFloat(document.getElementById('recovery_rate').value) || 70,
+    totalRec:      Math.round(d.totalRec),
+    denialRec:     Math.round(d.denialRec),
+    eligRec:       Math.round(d.eligRec),
+    residualHrs:   Math.round(d.residualHrs),
+    residualStaffAnnual: Math.round(d.residualStaffAnnual),
+    theirTotal:    Math.round(d.theirTotal),
+    ourTotal:      Math.round(d.ourFee),
+    ourFee:        Math.round(d.ourFee),
+    pricingModel:  d.feeIsFloor ? '$30K floor' : '2.5% of collections',
+    sfLicenseAnnual: Math.round(d.sfLicenseAnnual),
+    costSaving:    Math.round(d.costSaving),
+    ccr:           Math.round(d.ccr * 100) + '%',
+    ncr:           Math.round(d.ncr * 100) + '%',
+    daysAR:        Math.round(d.daysAR),
+    ncrGain:           Math.round(d.ncrGain),
+    ccrReworkAvoided:  Math.round(d.ccrReworkAvoided),
+    workingCapital:    Math.round(d.workingCapitalReleased),
+    ctcCurrent:    (d.ctcCurrent * 100).toFixed(1) + '%',
+    ctcProjected:  (d.ctcProjected * 100).toFixed(1) + '%',
+    ctcSaving:     Math.round(d.ctcSaving),
+    combined:      Math.round(d.combined),
+    combinedNetSF: Math.round(d.combinedNetSF),
+    setupCost:     Math.round(d.setupCost),
+    year1Net:      Math.round(d.year1Net),
+    paybackMonths: d.paybackMonths.toFixed(1),
+    roiYear1:      Math.round(d.roiYear1) + '%',
+    roiRecurring:  Math.round(d.roiRecurring) + '%'
+  };
+
+  fetch('https://script.google.com/macros/s/AKfycbz__RGjcPnFwEfhk-2i1yhKFkDnxHLLa_RTTNIVBJRSFplm9D71KvDGVwuVaSRR1HzMIQ/exec', {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(() => {}); // silent fail — don't interrupt the user experience
+}
+/* ── Reset & start over ── */
+function resetCalculator() {
+  window.location.reload();
+}
+/* ── PDF Download via Print ── */
+function downloadPDF() {
+  const btn = document.getElementById('pdf-btn');
+  btn.disabled = true;
+  btn.textContent = 'Opening print dialog…';
+
+  // Small delay to let button state render before print dialog opens
+  setTimeout(() => {
+    window.print();
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg> Download PDF report`;
+  }, 150);
+}
+
+/* ── Set copyright year ── */
+document.getElementById('year').textContent = new Date().getFullYear();
+autoScaleResidual();
+</script>
+</body>
+</html>
